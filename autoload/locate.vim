@@ -1,7 +1,14 @@
 " locate.vim
 
-" dictionary of previous searches (used when an empty pattern is provided)
+" dictionary of previous searches, indexed by buffer number (used when an
+" empty pattern is provided)
 let s:searches = {}
+" dictionary of match ids, indexed by location list buffer number
+let s:match_ids = {}
+" dictionary of buffer numbers, indexed by location list buffer number
+let s:buffer_nrs = {}
+
+" Pattern operations
 
 function! s:is_identifier(char)
   " returns 1 if character is in 'isident' and not backslash
@@ -46,133 +53,211 @@ function! s:get_prefixes(pattern)
   return prefixes
 endfunction
 
-function! s:get_full_pattern(pattern)
-  " if pattern starts with non-ID character, return it
-  " otherwise append user settings
+function! s:is_wrapped(pattern)
+  " check if pattern is validly wrapped
   let char = a:pattern[0]
   if !s:is_identifier(char)
-    return a:pattern
-  else
-    let wrapper = s:get_unused_non_identifier(a:pattern)
-    let flags = ''
-    if g:locate_global
-      let flags .= 'g'
-    endif
-    if !g:locate_jump
-      let flags .= 'j'
-    endif
-    let prefix = ''
-    let prefixes = s:get_prefixes(a:pattern)
-    if match(prefixes, '[cC]') <# 0 && g:locate_smart_case
-      if &ignorecase && match(a:pattern, '[A-Z]') >=# 0
-        let prefix .= '\C'
-      endif
-    endif
-    if match(prefixes, '[vVmM]') <# 0 && g:locate_very_magic
-      let prefix .= '\v'
-    endif
-    return wrapper . prefix . a:pattern . wrapper . flags
+    let parts = split(a:pattern, char, 1)
+    return len(parts) ==# 3 && match(parts[2], '[^gj]') <# 0
   endif
+  return 0
 endfunction
 
-function! s:go_to_window(close)
-  " goes to the first of the following windows (otherwise error out)
-  " * the current window if its buftype is empty
-  " * if the current window is a location list, the window associated with it
-  " * if the current window isn't a location list, the previous window if its
-  "   buftype is empty
-  " if successful, closes any open location list in the target window
-  if strlen(&buftype)
-    if exists('b:locate_window_number')
-      " we are in a location list
-      execute b:locate_window_number . 'wincmd w'
+function! s:wrap(pattern)
+  " wrap pattern and add user setting
+  let wrapper = s:get_unused_non_identifier(a:pattern)
+  let flags = ''
+  if g:locate_global
+    let flags .= 'g'
+  endif
+  if !g:locate_jump
+    let flags .= 'j'
+  endif
+  let prefix = ''
+  let prefixes = s:get_prefixes(a:pattern)
+  if match(prefixes, '[cC]') <# 0 && &ignorecase 
+    if g:locate_smart_case && match(a:pattern, '\C[A-Z]') >=# 0
+      let prefix .= '\C'
     else
-      execute 'wincmd p'
-      if strlen(&buftype)
-        " previous window is special too, go back and error out
-        execute 'wincmd p'
-        throw 'Unable to locate from strange windows!'
-      endif
+      let prefix .= '\c'
     endif
   endif
-  if a:close
-    execute 'lclose'
+  if match(prefixes, '[vVmM]') <# 0 && g:locate_very_magic
+    let prefix .= '\v'
   endif
+  return wrapper . prefix . a:pattern . wrapper . flags
 endfunction
 
-function! s:highlight_pattern(pattern)
-  " highlight pattern in location list and current window
-  " must be called from a location list
-  if exists('b:locate_window_number')
-    call matchadd(g:locate_highlight, '\c' . a:pattern)
-  else
-    throw 'Unable to highlight from non locate window'
-  endif
-endfunction
+" Searching
 
-function! s:open_location_list(full_pattern)
-  let [nothing, empty_pattern, flags] = split(a:full_pattern, a:full_pattern[0], 1)
-  if match(flags, 'j') <=# 0
-    execute 'normal zz'
-  endif
-  execute 'lopen'
-  let b:locate_window_number = winnr('#')
-  if strlen(g:locate_highlight)
-    call s:highlight_pattern(empty_pattern)
-  endif
-endfunction
-
-function! s:on_close_location_list()
-  " TODO: clear location list
-endfunction
-
-function! locate#locate_pattern(pattern, ...)
-  " load matches to location list and open it
-  call s:go_to_window(1)
+function! s:locate(pattern)
+  " runs lvimgrep for pattern in current window (also adds a mark at initial position)
+  " returns wrapped pattern (empty string if no pattern found for window)
   if strlen(g:locate_initial_mark)
     execute 'normal! m' . g:locate_initial_mark
   endif
   if strlen(a:pattern)
-    let full_pattern = s:get_full_pattern(a:pattern)
-    let s:searches[winnr()] = full_pattern
-  elseif has_key(s:searches, winnr() . '')
-    let full_pattern = s:searches[winnr() . '']
+    if s:is_wrapped(a:pattern)
+      let wrapped_pattern = a:pattern
+    else
+      let wrapped_pattern = s:wrap(a:pattern)
+    endif
+    echo 'Locating: ' . wrapped_pattern
+    let s:searches[bufnr('%')] = wrapped_pattern
+  elseif has_key(s:searches, bufnr('%') . '')
+    let wrapped_pattern = s:searches[bufnr('%') . '']
   else
-    echoerr 'No previous pattern found.'
-    return
+    return ''
   endif
   try
-    execute 'lvimgrep ' . full_pattern . ' %'
-    call s:open_location_list(full_pattern)
+    execute 'lvimgrep ' . wrapped_pattern . ' %'
   catch /^Vim\%((\a\+)\)\=:E480/
-    echo 'No matches found.'
   finally
-    if !g:locate_focus && !(a:0 > 0 && a:1)
-      call s:go_to_window(0)
-    endif
+    return wrapped_pattern
   endtry
 endfunction
 
-function! locate#locate_cword()
-  " wrapper for mappings
+" Window handling
+
+function! s:go_to_window()
+  " goes to the first of the following windows
+  " * the current window if its buftype is empty
+  " * if the current window is a location list, the window associated with it
+  " returns 0 if success, 1 if error
   if strlen(&buftype)
-    echoerr 'Cannot locate from special buffers.'
-  else
-    call locate#locate_pattern(expand('<cword>'))
+    let cur_bufnr = bufnr('%')
+    if has_key(s:buffer_nrs, cur_bufnr)
+      " we are in a location list
+      execute bufwinnr(s:buffer_nrs[cur_bufnr]) . 'wincmd w'
+    else
+      return 1
+    endif
+  endif
+  execute 'lclose'
+  return 0
+endfunction
+
+function! s:preserve_history_command()
+  " returns commands to go back to current window, preserving previous window as well
+  return winnr('#') . 'wincmd w | ' . winnr() . 'wincmd w'
+endfunction
+
+function! s:open_location_list(wrapped_pattern, height, focus)
+  " open location list (also does formatting and highlighting)
+  let [nothing, empty_pattern, flags] = split(a:wrapped_pattern, a:wrapped_pattern[0], 1)
+  let cur_bufnr = bufnr('%')
+  let preserve_cmd = s:preserve_history_command()
+  let match_id = matchadd(g:locate_highlight, empty_pattern)
+  execute 'lopen ' . a:height
+  let loclist_bufnr = bufnr('%')
+  let s:buffer_nrs[loclist_bufnr] = cur_bufnr
+  let s:match_ids[loclist_bufnr] = match_id
+  call matchadd(g:locate_highlight, empty_pattern)
+  setlocal modifiable
+  silent execute '%s/^[^|]\+|\(\d\+\) col \(\d\+\)/\1|\2/'
+  setlocal nomodified
+  setlocal nomodifiable
+  silent execute 'normal! gg'
+  autocmd! BufWinLeave <buffer> call <SID>on_close_location_list()
+  if !a:focus
+    execute preserve_cmd
   endif
 endfunction
 
-function! locate#locate_selection()
-  " wrapper for mappings
+
+function! s:on_close_location_list()
+  " clear location list and remove highlighting from associated window
+  let closed_bufnr = expand('<abuf>') . ''
+  if has_key(s:match_ids, closed_bufnr) && has_key(s:buffer_nrs, closed_bufnr)
+    let match_id = remove(s:match_ids, closed_bufnr)
+    let buffer_nr = remove(s:buffer_nrs, closed_bufnr)
+    let window_nr = bufwinnr(buffer_nr)
+    if winbufnr(window_nr) >=# 0
+      " if the window is still there, remove highlighting
+      let preserve_cmd = s:preserve_history_command()
+      execute window_nr . 'wincmd w'
+      call matchdelete(match_id)
+      call setloclist(window_nr, [])
+      execute preserve_cmd
+    endif
+  else
+    throw 'Something has gone wrong with highlighting!'
+  endif
+endfunction
+
+" Public functions
+
+function! locate#pattern(pattern, switch_focus)
+  " main public function
+  " finds matches of pattern
+  " opens location list
+  let status = s:go_to_window()
+  if !s:go_to_window()
+    let wrapped_pattern = s:locate(a:pattern)
+    redraw!
+    if strlen(wrapped_pattern)
+      let total_matches = len(getloclist(0))
+      echo total_matches . ' match(es) found.'
+      if total_matches
+        let height = min([total_matches, g:locate_max_height])
+        let focus = a:switch_focus ? !g:locate_focus : g:locate_focus
+        call s:open_location_list(wrapped_pattern, height, focus)
+      endif
+    else
+      echoerr 'No previous pattern found.'
+    endif
+  else
+    echoerr 'Not in valid Locate window.'
+  endif
+endfunction
+
+function! locate#cword()
+  " run locate on <cword>
+  if strlen(&buftype)
+    echoerr 'Cannot locate from special buffers.'
+  else
+    call locate#pattern(expand('<cword>'), 0)
+  endif
+endfunction
+
+function! locate#selection() range
+  " run locate on selection
   if strlen(&buftype)
     echoerr 'Cannot locate from special buffers.'
   else
     let [lnum1, col1] = getpos("'<")[1:2]
     let [lnum2, col2] = getpos("'>")[1:2]
-    let lines = getline(lnum1, lnum2)
-    let lines[-1] = lines[-1][: col2 - (&selection == 'inclusive' ? 1 : 2)]
-    let lines[0] = lines[0][col1 - 1:]
-    let pattern = join(lines, "\n")
-    call locate#locate_pattern(pattern)
+    if lnum1 ==# lnum2
+      let line = getline(lnum1)
+      let line = line[: col2 - (&selection == 'inclusive' ? 1 : 2)]
+      let line = line[col1 - 1:]
+      let line = substitute(line, '\n', '', 'g')
+      call locate#pattern(line, 0)
+      execute 'normal `<'
+    else
+      echoerr 'Can only locate selection from inside a single line.'
+    endif
   endif
 endfunction
+
+function! locate#refresh()
+  " refresh last locate search
+  call locate#pattern('', 0)
+endfunction
+
+"TODO: autoclose location windows
+
+" autocmd! BufEnter * call <SID>synchronize()
+
+" function! s:synchronize()
+"   " close any location lists of non visible buffers
+"   for [loc_bufnr, bufnr] in items(s:buffer_nrs)
+"     if bufwinnr(bufnr) <# 0
+"       execute bufwinnr(loc_bufnr) . 'wincmd w'
+"       quit
+"     endif
+"     " if bufwinnr(loc_bufnr) <# 0
+"     "   call s:on_close_location_list(loc_bufnr)
+"     " endif
+"   endfor
+" endfunction
