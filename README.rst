@@ -24,10 +24,10 @@ With `pathogen.vim`_:
 
 .. code:: bash
 
-  cd ~/.vim/bundle
-  git clone https://github.com/mtth/locate.vim
+  $ cd ~/.vim/bundle
+  $ git clone https://github.com/mtth/locate.vim
 
-Otherwise, simply copy the folders into you ``.vim`` directory.
+Otherwise simply copy the folders into your ``.vim`` directory.
 
 
 .. _`pathogen.vim`: https://github.com/tpope/vim-pathogen
