@@ -1,4 +1,5 @@
 *locate.txt*   Locate stuff like there is no tomorrow.
+*Locate*
 
 The |:lvimgrep| you've always dreamed of.
 
@@ -8,29 +9,47 @@ CONTENTS                                                     *Locate-contents*
 
     1. Intro ........................... |LocateIntro|
     2. Usage ........................... |LocateUsage|
-    3. Commands ........................ |LocateCommands|
-    4. Mappings ........................ |LocateMappings|
-    5. Configuration ................... |LocateConfig|
+    3. Mappings ........................ |LocateMappings|
+    4. Configuration ................... |LocateConfig|
 
 
 ==============================================================================
 1. Intro                                                         *LocateIntro*
 
-Hello.
+Locate provides a single command |:Locate| which wraps the built-in |:lvimgrep|
+command, with searches automatically being done in the current buffer.
+
+Here are a few sample features provided:
+
+  * Automatic pattern wrapping
+  * Optional smart case  and very magic mode
+  * Customizable search match highlighting!
 
 
 ==============================================================================
 2. Usage                                                         *LocateUsage*
 
-Basic usage is similar to |:lvimgrep|, with searches automatically being
-done in the current window.
-
 As with |:lvimgrep|, Locate can search for two types of patterns. Additionally
 Locate will smartly detect which is which and smartly append custom flags
 when necessary.
 
+
 ------------------------------------------------------------------------------
-2.1 Wrapped Patterns                                   *LocateWrappedPatterns*
+2.1 Locate Command                                                   *:Locate*
+
+  :Locate[!] /<pattern>/[g][j]
+  :Locate[!] <pattern>
+
+Locate <pattern> in current window. The presence of <bang> inverts the effect
+of |g:locate_focus|'s current value.
+
+If the <pattern> is bare (cf. |LocateBarePatterns|), search flags
+corresponding to the user's Locate configuration options will be added,
+otherwise the pattern will be used as is.
+
+
+------------------------------------------------------------------------------
+2.2 Wrapped Patterns                                   *LocateWrappedPatterns*
 
 A wrapped pattern is similar to the patterns describe in |:lvimgrep|'s first
 use case. They represent a search string surrounded by a non-ID character (cf.
@@ -46,37 +65,36 @@ Examples of non-valid wrapped patterns:
 
 Wrapped patterns are used as-in by Locate.
 
+
 ------------------------------------------------------------------------------
-2.2 Bare Patterns                                         *LocateBarePatterns*
+2.3 Bare Patterns                                         *LocateBarePatterns*
 
 Any other patterns will be considered as bare. These will be wrapped
 automatically and user set search options will apply.
 
+For example the following pattern transformations would apply (assuming the
+default configuration options are in place):
 
-==============================================================================
-3. Commands                                                   *LocateCommands*
+      hello
+  =>  /\v\chello/g
 
-------------------------------------------------------------------------------
-3.1 :Locate[!] <pattern>                                             *:Locate*
-    :Locate[!] /<pattern>/[g][j]
+      Hello
+  =>  /\v\CHello/g
 
-Locate <pattern> in current window. The presence of <bang> inverts the effect
-of |g:locate_focus|'s current value.
+      /\v\Chello world! 
+  =>  #/\v\Chello world!#g
 
-If the <pattern> is bare (cf. |LocateBarePatterns|), search flags
-corresponding to the user's Locate configuration options will be added,
-otherwise the pattern will be used as is.
+      /\mhello/world
+  =>  #/\m\chello/world#g
 
-------------------------------------------------------------------------------
-3.2 :LocateHighlight[!]                                     *:LocateHighlight*
-
-Toggle highlighting. If <bang>, clear all Locate highlights.
+Note that Locate will only wrap patterns with non-ID characters that are not
+in the pattern. You don't need to worry about not using certain characters.
 
 
 ==============================================================================
-4. Mappings                                                   *LocateMappings*
+3. Mappings                                                   *LocateMappings*
 
-Locate provides the following two mappings.
+Locate provides the following two mappings:
 
 ------------------------------------------------------------------------------
                                                                           *gl*
@@ -85,29 +103,33 @@ In normal mode, gl will locate the word under the cursor (cf. |<cword>|).
 In visual mode, gl will locate the selection. Note that the selection can
 not go over more than one line.
 
+Note that gl will only work in 'normal' buffers (i.e. where |'buftype'| is
+empty). This is to avoid ambiguity and keep location windows organized.
+
+
 ------------------------------------------------------------------------------
                                                                           *gL*
 
-gL always refreshes the last Locate search.
+In normal mode, gL refreshes the last Locate search for the active buffer.
 
 
 ==============================================================================
-5. Configuration                                                *LocateConfig*
+4. Configuration                                                *LocateConfig*
 
 You can tame Locate by changing the following options.
 
+
 ------------------------------------------------------------------------------
-5.1 g:locate_highlight                                      *locate_highlight*
+4.1 g:locate_highlight = 'Search'                           *locate_highlight*
 
 Highlight style of Locate matches. Highlighting can also be toggled via the
 |:LocateHighlight| command.
 
 Set this option to an empty string to disable any highlighting.
 
-Default: 'Search'
 
 ------------------------------------------------------------------------------
-5.2 g:locate_initial_mark                                *locate_initial_mark*
+4.2 g:locate_initial_mark = 'l'                          *locate_initial_mark*
 
 By default, Locate sets a mark  at the position of the cursor before running
 a search. This is useful to jump back to work after doing any search related
@@ -115,47 +137,44 @@ edits. This option controls which mark is used.
 
 Set this option to an empty string to disable this behavior.
 
-Default: 'l'
 
 ------------------------------------------------------------------------------
-5.3 g:locate_max_height                                    *locate_max_height*
+4.3 g:locate_max_height = 20                               *locate_max_height*
 
 Set the maximum height of the location list window opened by Locate. The
 location list window will be adequately sized depending on the number of
 search results.
 
-Default: 20
 
 ------------------------------------------------------------------------------
-5.4 g:locate_focus                                              *locate_focus*
+4.4 g:locate_focus = 0                                          *locate_focus*
 
 Focus the location list window automatically after each search.
 
-Default: 0
 
 ------------------------------------------------------------------------------
-5.5 g:locate_global                                            *locate_global*
+4.5 g:locate_global = 1                                        *locate_global*
 
 Activate the 'g' flag by default when searching for bare patterns.
 
-Default: 1
 
 ------------------------------------------------------------------------------
-5.6 g:locate_jump                                                *locate_jump*
+4.6 g:locate_jump = 1                                            *locate_jump*
 
 Jump to first match automatically when searching for bare patterns.
 
-Default: 1
 
 ------------------------------------------------------------------------------
-5.7 g:locate_very_magic                                    *locate_very_magic*
+4.7 g:locate_very_magic = 1                                *locate_very_magic*
 
-Make every bare pattern 'very magic' (cf. |'magic'|).
+Make every bare pattern 'very magic' (cf. |'magic'|) by default.
 
-Default: 1
+Prepending a magic flag to the pattern (i.e. \v, \V, \m, \M) will override this
+setting.
+
 
 ------------------------------------------------------------------------------
-5.8 g:locate_smart_case                                    *locate_smart_case*
+4.8 g:locate_smart_case = 1                                *locate_smart_case*
 
 Activate |'smartcase'| when searching for bare patterns. This behaves exactly
 like this option for normal searches. In particular:
@@ -167,4 +186,5 @@ like this option for normal searches. In particular:
   * if the bare pattern contains only lowercase letters, search will be
     case-insensitive
 
-Default: 1
+Manually setting the case sensitivity for the pattern by prepending \c or \C
+will override this setting.
