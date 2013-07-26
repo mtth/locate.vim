@@ -1,4 +1,4 @@
-*locate.txt*   Locate stuff like there is no tomorrow.
+*locate.txt*   Locate stuff like there is no tomorrow.                  v1.0.0
 *Locate*
 
 The |:lvimgrep| you've always dreamed of.
@@ -7,10 +7,19 @@ The |:lvimgrep| you've always dreamed of.
 ==============================================================================
 CONTENTS                                                     *Locate-contents*
 
-    1. Intro ........................... |LocateIntro|
-    2. Usage ........................... |LocateUsage|
+    1. Intro .............................. |LocateIntro|
+    2. Usage .............................. |LocateUsage|
     3. Mappings ........................ |LocateMappings|
-    4. Configuration ................... |LocateConfig|
+    4. Configuration ..................... |LocateConfig|
+      4.1 |g:locate_highlight|
+      4.2 |g:locate_initial_mark|
+      4.3 |g:locate_max_height|
+      4.4 |g:locate_focus|
+      4.5 |g:locate_global|
+      4.6 |g:locate_jump|
+      4.7 |g:locate_very_magic|
+      4.8 |g:locate_smart_case|
+    5. Changes .......................... |LocateChanges|
 
 
 ==============================================================================
@@ -120,16 +129,26 @@ You can tame Locate by changing the following options.
 
 
 ------------------------------------------------------------------------------
-4.1 g:locate_highlight = 'Search'                           *locate_highlight*
+4.1 g:locate_highlight = 'Search'                         *g:locate_highlight*
 
-Highlight style of Locate matches. Highlighting can also be toggled via the
-|:LocateHighlight| command.
+Highlight style of Locate matches.
 
-Set this option to an empty string to disable any highlighting.
+Highlighting is specific to the buffer search and refreshed automatically 
+when a new Locate search is done. When the location list is closed, the 
+highlighting is turned off.
+
+Note that this highlighting is separate from the global search highlighting 
+(triggered by |'hlsearch'|). In particular, this enables you to have several 
+highlights at any given time and potentially of different colors. For 
+example 'pandocDefinitionTerm' looks good if you are using Solarized 
+(https://github.com/altercation/vim-colors-solarized).
+
+Set this option to an empty string to disable any Locate specific
+highlighting.
 
 
 ------------------------------------------------------------------------------
-4.2 g:locate_initial_mark = 'l'                          *locate_initial_mark*
+4.2 g:locate_initial_mark = 'l'                        *g:locate_initial_mark*
 
 By default, Locate sets a mark  at the position of the cursor before running
 a search. This is useful to jump back to work after doing any search related
@@ -139,7 +158,7 @@ Set this option to an empty string to disable this behavior.
 
 
 ------------------------------------------------------------------------------
-4.3 g:locate_max_height = 20                               *locate_max_height*
+4.3 g:locate_max_height = 20                             *g:locate_max_height*
 
 Set the maximum height of the location list window opened by Locate. The
 location list window will be adequately sized depending on the number of
@@ -147,25 +166,25 @@ search results.
 
 
 ------------------------------------------------------------------------------
-4.4 g:locate_focus = 0                                          *locate_focus*
+4.4 g:locate_focus = 0                                        *g:locate_focus*
 
 Focus the location list window automatically after each search.
 
 
 ------------------------------------------------------------------------------
-4.5 g:locate_global = 1                                        *locate_global*
+4.5 g:locate_global = 1                                      *g:locate_global*
 
 Activate the 'g' flag by default when searching for bare patterns.
 
 
 ------------------------------------------------------------------------------
-4.6 g:locate_jump = 1                                            *locate_jump*
+4.6 g:locate_jump = 1                                          *g:locate_jump*
 
 Jump to first match automatically when searching for bare patterns.
 
 
 ------------------------------------------------------------------------------
-4.7 g:locate_very_magic = 1                                *locate_very_magic*
+4.7 g:locate_very_magic = 1                              *g:locate_very_magic*
 
 Make every bare pattern 'very magic' (cf. |'magic'|) by default.
 
@@ -174,7 +193,7 @@ setting.
 
 
 ------------------------------------------------------------------------------
-4.8 g:locate_smart_case = 1                                *locate_smart_case*
+4.8 g:locate_smart_case = 1                              *g:locate_smart_case*
 
 Activate |'smartcase'| when searching for bare patterns. This behaves exactly
 like this option for normal searches. In particular:
@@ -188,3 +207,10 @@ like this option for normal searches. In particular:
 
 Manually setting the case sensitivity for the pattern by prepending \c or \C
 will override this setting.
+
+
+==============================================================================
+5. Changes                                                     *LocateChanges*
+
+v1.0.0 (07/26/2013)
+  * Initial stable release.

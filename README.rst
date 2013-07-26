@@ -11,7 +11,23 @@ Features
 --------
 
 * Automatic pattern wrapping
-* Optional smart case  and very magic mode
+* Optional smart case and very magic mode
+* Responsive location list sizing
 * Customizable search match highlighting!
 
 ``:help Locate`` for more.
+
+Installation
+------------
+
+With `pathogen.vim`_:
+
+.. code:: bash
+
+  cd ~/.vim/bundle
+  git clone https://github.com/mtth/locate.vim
+
+Otherwise, simply copy the folders into you ``.vim`` directory.
+
+
+.. _`pathogen.vim`: https://github.com/tpope/vim-pathogen
