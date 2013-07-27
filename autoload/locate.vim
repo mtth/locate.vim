@@ -75,7 +75,7 @@ function! s:wrap(pattern)
   endif
   let prefix = ''
   let prefixes = s:get_prefixes(a:pattern)
-  if match(prefixes, '[cC]') <# 0 && &ignorecase 
+  if match(prefixes, '[cC]') <# 0 && &ignorecase
     if g:locate_smart_case && match(a:pattern, '\C[A-Z]') >=# 0
       let prefix .= '\C'
     else
@@ -157,13 +157,13 @@ function! s:open_location_list(wrapped_pattern, height, focus)
   silent execute '%s/^[^|]\+|\(\d\+\) col \(\d\+\)/\1|\2/'
   setlocal nomodified
   setlocal nomodifiable
+  setlocal foldcolumn=0
   silent execute 'normal! gg'
   autocmd! BufWinLeave <buffer> call <SID>on_close_location_list()
   if !a:focus
     execute preserve_cmd
   endif
 endfunction
-
 
 function! s:on_close_location_list()
   " clear location list and remove highlighting from associated window
@@ -177,15 +177,28 @@ function! s:on_close_location_list()
       let preserve_cmd = s:preserve_history_command()
       execute window_nr . 'wincmd w'
       call matchdelete(match_id)
-      call setloclist(window_nr, [])
       execute preserve_cmd
     endif
   else
-    throw 'Something has gone wrong with highlighting!'
+    throw 'Something has gone wrong!'
   endif
 endfunction
 
+function! s:sync(force)
+  " close any location lists without a displayed associated buffer
+  for [loc_nr, buf_nr] in items(s:buffer_nrs)
+    if bufwinnr(buf_nr) ==# -1 || a:force
+      execute 'bdelete ' . loc_nr
+    endif
+  endfor
+endfunction
+
 " Public functions
+
+augroup locate
+  autocmd!
+  autocmd BufEnter * nested call <SID>sync(0)
+augroup END
 
 function! locate#pattern(pattern, switch_focus)
   " main public function
@@ -245,19 +258,11 @@ function! locate#refresh()
   call locate#pattern('', 0)
 endfunction
 
-"TODO: autoclose location windows
-
-" autocmd! BufEnter * call <SID>synchronize()
-
-" function! s:synchronize()
-"   " close any location lists of non visible buffers
-"   for [loc_bufnr, bufnr] in items(s:buffer_nrs)
-"     if bufwinnr(bufnr) <# 0
-"       execute bufwinnr(loc_bufnr) . 'wincmd w'
-"       quit
-"     endif
-"     " if bufwinnr(loc_bufnr) <# 0
-"     "   call s:on_close_location_list(loc_bufnr)
-"     " endif
-"   endfor
-" endfunction
+function! locate#purge(all)
+  " close current or all location lists
+  if a:all
+    call s:sync(1)
+  else
+    execute 'lclose'
+  endif
+endfunction
