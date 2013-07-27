@@ -119,6 +119,16 @@ endfunction
 
 " Window handling
 
+function! s:close_location_lists(buf_nr)
+  " close hidden location lists and list associated with buffer number buf_nr
+  " if buf_nr = -1, close all location lists
+  for [loc_nr, buf_nr] in items(s:buffer_nrs)
+    if bufwinnr(buf_nr) ==# -1 || a:buf_nr ==# -1 || a:buf_nr ==# buf_nr
+      execute 'bdelete ' . loc_nr
+    endif
+  endfor
+endfunction
+
 function! s:go_to_window()
   " goes to the first of the following windows
   " * the current window if its buftype is empty
@@ -133,7 +143,7 @@ function! s:go_to_window()
       return 1
     endif
   endif
-  execute 'lclose'
+  call s:close_location_lists(bufnr('%'))
   return 0
 endfunction
 
@@ -184,20 +194,11 @@ function! s:on_close_location_list()
   endif
 endfunction
 
-function! s:sync(force)
-  " close any location lists without a displayed associated buffer
-  for [loc_nr, buf_nr] in items(s:buffer_nrs)
-    if bufwinnr(buf_nr) ==# -1 || a:force
-      execute 'bdelete ' . loc_nr
-    endif
-  endfor
-endfunction
-
 " Public functions
 
 augroup locate
   autocmd!
-  autocmd BufEnter * nested call <SID>sync(0)
+  autocmd BufEnter * nested call <SID>close_location_lists(0)
 augroup END
 
 function! locate#pattern(pattern, switch_focus)
@@ -220,36 +221,28 @@ function! locate#pattern(pattern, switch_focus)
       echoerr 'No previous pattern found.'
     endif
   else
-    echoerr 'Not in valid Locate window.'
+    echoerr 'Invalid buffer.'
   endif
 endfunction
 
 function! locate#cword()
   " run locate on <cword>
-  if strlen(&buftype)
-    echoerr 'Cannot locate from special buffers.'
-  else
-    call locate#pattern(expand('<cword>'), 0)
-  endif
+  call locate#pattern(expand('<cword>'), 0)
 endfunction
 
 function! locate#selection() range
   " run locate on selection
-  if strlen(&buftype)
-    echoerr 'Cannot locate from special buffers.'
+  let [lnum1, col1] = getpos("'<")[1:2]
+  let [lnum2, col2] = getpos("'>")[1:2]
+  if lnum1 ==# lnum2
+    let line = getline(lnum1)
+    let line = line[: col2 - (&selection == 'inclusive' ? 1 : 2)]
+    let line = line[col1 - 1:]
+    let line = substitute(line, '\n', '', 'g')
+    call locate#pattern(line, 0)
+    execute 'normal `<'
   else
-    let [lnum1, col1] = getpos("'<")[1:2]
-    let [lnum2, col2] = getpos("'>")[1:2]
-    if lnum1 ==# lnum2
-      let line = getline(lnum1)
-      let line = line[: col2 - (&selection == 'inclusive' ? 1 : 2)]
-      let line = line[col1 - 1:]
-      let line = substitute(line, '\n', '', 'g')
-      call locate#pattern(line, 0)
-      execute 'normal `<'
-    else
-      echoerr 'Can only locate selection from inside a single line.'
-    endif
+    echoerr 'Can only locate selection from inside a single line.'
   endif
 endfunction
 
@@ -259,10 +252,10 @@ function! locate#refresh()
 endfunction
 
 function! locate#purge(all)
-  " close current or all location lists
+  " close location lists associated with current or all buffers
   if a:all
-    call s:sync(1)
+    call s:close_location_lists(-1)
   else
-    execute 'lclose'
+    call s:close_location_lists(bufnr('%'))
   endif
 endfunction
