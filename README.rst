@@ -13,9 +13,10 @@ Features
 * Automatic pattern wrapping
 * Optional smart case and very magic mode
 * Responsive location list sizing
-* Customizable search match highlighting!
+* Window specific search match highlighting
 
 ``:help Locate`` for more.
+
 
 Installation
 ------------

@@ -8,7 +8,9 @@ The |:lvimgrep| you've always dreamed of.
 CONTENTS                                                     *Locate-contents*
 
     1. Intro .............................. |LocateIntro|
-    2. Usage .............................. |LocateUsage|
+    2. Commands ........................ |LocateCommands|
+      2.1 |:Locate|
+      2.2 |:Lpurge|
     3. Mappings ........................ |LocateMappings|
     4. Configuration ..................... |LocateConfig|
       4.1 |g:locate_highlight|
@@ -25,64 +27,42 @@ CONTENTS                                                     *Locate-contents*
 ==============================================================================
 1. Intro                                                         *LocateIntro*
 
-Locate provides a single command |:Locate| which wraps the built-in |:lvimgrep|
-command, with searches automatically being done in the current buffer.
+Locate provides a command |:Locate| which wraps the built-in |:lvimgrep|
+command, with searches automatically being done in the current window.
 
 Here are a few sample features provided:
 
   * Automatic pattern wrapping
   * Optional smart case  and very magic mode
-  * Customizable search match highlighting!
+  * Customizable search match highlighting
 
 
 ==============================================================================
-2. Usage                                                         *LocateUsage*
-
-As with |:lvimgrep|, Locate can search for two types of patterns. Additionally
-Locate will smartly detect which is which and smartly append custom flags
-when necessary.
+2. Commands                                                   *LocateCommands*
 
 
 ------------------------------------------------------------------------------
-2.1 Locate Command                                                   *:Locate*
+2.1 :L[ocate][!] <pattern>                                      *:L* *:Locate*
 
-  :Locate[!] /<pattern>/[g][j]
-  :Locate[!] <pattern>
+Locate <pattern> in current window. <pattern> can be any regular expression or
+Vim search pattern. With [!], act as if |g:locate_focus|'s value was inverted.
 
-Locate <pattern> in current window. The presence of <bang> inverts the effect
-of |g:locate_focus|'s current value.
+If <pattern> is enclosed in non-ID characters (optionally followed by the 'g'
+and 'j' flags), it will be passed through as is to the underlying |:vimgrep|
+command. E.g.
 
-If the <pattern> is bare (cf. |LocateBarePatterns|), search flags
-corresponding to the user's Locate configuration options will be added,
-otherwise the pattern will be used as is.
-
-
-------------------------------------------------------------------------------
-2.2 Wrapped Patterns                                   *LocateWrappedPatterns*
-
-A wrapped pattern is similar to the patterns describe in |:lvimgrep|'s first
-use case. They represent a search string surrounded by a non-ID character (cf.
-|'isident'|) with potentially 'g' or 'j' flags appended.
-
-Examples of valid wrapped patterns:
   /hello/
   #hello world!#g
 
-Examples of non-valid wrapped patterns:
-  /hello
-  #hello world!#jt
+In any other case, <pattern> will be automatically upgraded to a Vim search
+pattern based on the following configuration options:
 
-Wrapped patterns are used as-in by Locate.
+  * |g:locate_global|
+  * |g:locate_jump|
+  * |g:locate_very_magic|
+  * |g:locate_smart_case|
 
-
-------------------------------------------------------------------------------
-2.3 Bare Patterns                                         *LocateBarePatterns*
-
-Any other patterns will be considered as bare. These will be wrapped
-automatically and user set search options will apply.
-
-For example the following pattern transformations would apply (assuming the
-default configuration options are in place):
+Examples of transformed patterns (with default configuration options):
 
       hello
   =>  /\v\chello/g
@@ -98,6 +78,13 @@ default configuration options are in place):
 
 Note that Locate will only wrap patterns with non-ID characters that are not
 in the pattern. You don't need to worry about not using certain characters.
+
+
+------------------------------------------------------------------------------
+2.2 :Lpurge[!]                                                        *Lpurge*
+
+Close location list and clear locate search highlighting for current window.
+With the [!], do the same for all windows in current tab.
 
 
 ==============================================================================
@@ -119,7 +106,7 @@ empty). This is to avoid ambiguity and keep location windows organized.
 ------------------------------------------------------------------------------
                                                                           *gL*
 
-In normal mode, gL refreshes the last Locate search for the active buffer.
+Similar to |gl| but focuses the location list window after searching.
 
 
 ==============================================================================
@@ -211,6 +198,12 @@ will override this setting.
 
 ==============================================================================
 5. Changes                                                     *LocateChanges*
+
+v1.1.0 (07/28/2013)
+  * Automatic location list closing
+  * |:Lpurge| command
+  * Multiple windows per buffer supported
+  * Multiple tabs supported
 
 v1.0.0 (07/26/2013)
   * Initial stable release.
