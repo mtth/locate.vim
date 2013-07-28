@@ -33,6 +33,7 @@ command! -bang -nargs=* Locate call locate#pattern(<q-args>, <bang>0)
 command! -bang -nargs=* L call locate#pattern(<q-args>, <bang>0)
 command! -bang Lpurge call locate#purge(<bang>0)
 
-nnoremap <silent> gl :call locate#cword()<cr>
-vnoremap <silent> gl :call locate#selection()<cr>
-nnoremap <silent> gL :call locate#refresh()<cr>
+nnoremap <silent> gl :call locate#cword(0)<cr>
+vnoremap <silent> gl :call locate#selection(0)<cr>
+nnoremap <silent> gL :call locate#cword(1)<cr>
+vnoremap <silent> gL :call locate#selection(1)<cr>

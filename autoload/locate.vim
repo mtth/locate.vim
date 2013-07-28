@@ -6,13 +6,13 @@ else
   let s:loaded = 1
 endif
 
-" dictionary of previous searches, indexed by buffer number (used when an
-" empty pattern is provided)
-let s:searches = {}
-" dictionary of buffer numbers indexed by location list buffer number
-let s:buffer_nrs = {}
-" dictionary of match ids indexed by location list buffer number
+" id counter
+let s:locate_index = 0
+" dictionary of locate ids indexed by location list buffer id
+let s:locate_ids = {}
+" dictionary of match ids indexed by locate id
 let s:match_ids = {}
+
 
 " Pattern operations
 
@@ -102,19 +102,12 @@ function! s:locate(pattern)
   if strlen(g:locate_initial_mark)
     execute 'normal! m' . g:locate_initial_mark
   endif
-  if strlen(a:pattern)
-    if s:is_wrapped(a:pattern)
-      let wrapped_pattern = a:pattern
-    else
-      let wrapped_pattern = s:wrap(a:pattern)
-    endif
-    echo 'Locating: ' . wrapped_pattern
-    let s:searches[bufnr('%')] = wrapped_pattern
-  elseif has_key(s:searches, bufnr('%') . '')
-    let wrapped_pattern = s:searches[bufnr('%') . '']
+  if s:is_wrapped(a:pattern)
+    let wrapped_pattern = a:pattern
   else
-    return ''
+    let wrapped_pattern = s:wrap(a:pattern)
   endif
+  echo 'Locating: ' . wrapped_pattern
   try
     execute 'lvimgrep ' . wrapped_pattern . ' %'
   catch /^Vim\%((\a\+)\)\=:E480/
@@ -136,57 +129,74 @@ function! s:create_highlight_group(base_group)
   silent execute 'highlight Locate ' . locate_highlight
 endfunction
 
-function! s:generate_match_id()
-  " returns new unique match id
-  return max([4, max(values(s:match_ids)) + 1])
-endfunction
-
-function! s:remove_match(match_id)
-  " remove highlight corresponding to match id
+function! s:remove_highlight(locate_id)
+  " remove highlight corresponding to locate id
   let preserve_cmd = s:preserve_history_command()
+  let match_id = remove(s:match_ids, a:locate_id) 
   for win_nr in range(1, winnr('$'))
-    execute win_nr . 'wincmd w'
-    try
-      call matchdelete(a:match_id)
-    catch /^Vim\%((\a\+)\)\=:E803/
-    endtry
+    let locate_id = getwinvar(win_nr, 'locate_id')
+    if locate_id ==# a:locate_id
+      execute win_nr . 'wincmd w'
+      call matchdelete(match_id)
+    endif
   endfor
   execute preserve_cmd
 endfunction
 
 " Window handling
 
-function! s:close_location_list(buf_nr)
-  " close hidden location lists and list associated with buffer number buf_nr
-  " if buf_nr = -1, close all location lists
-  for [loc_nr, buf_nr] in items(s:buffer_nrs)
-    if bufwinnr(buf_nr) ==# -1 || a:buf_nr ==# -1 || a:buf_nr ==# buf_nr
-      if winnr('$') ==# 1
-        " only one window left (in tab)
+function s:generate_id()
+  " return unique locate id used per window
+   let s:locate_index += 1
+   return s:locate_index
+endfunction
+
+function! s:purge(locate_id)
+  for [buf_nr, locate_id] in items(s:locate_ids)
+    if locate_id ==# a:locate_id
+      execute 'bdelete ' . buf_nr
+    endif
+  endfor
+endfunction
+
+function! s:purge_hidden()
+  " close location lists where the associated window is not present
+  let open_locate_ids = []
+  for win_nr in range(1, winnr('$'))
+    let locate_id = getwinvar(win_nr, 'locate_id')
+    if locate_id
+      call add(open_locate_ids, locate_id)
+    endif
+  endfor
+  for [buf_nr, locate_id] in items(s:locate_ids)
+    if match(open_locate_ids, locate_id) ==# -1
+      if winnr('$') ==# 1 && tabpagenr('$') ==# 1
+        " only one window left and we are in only tab
         quit
-      else
-        execute 'bdelete ' . loc_nr
+      elseif bufwinnr(str2nr(buf_nr)) !=# -1
+        " the location list is open in current tab
+        execute 'bdelete ' . buf_nr
       endif
     endif
   endfor
 endfunction
 
-function! s:go_to_window()
-  " goes to the first of the following windows
-  " * the current window if its buftype is empty
-  " * if the current window is a location list, the window associated with it
-  " returns 0 if success, 1 if error
-  if strlen(&buftype)
-    let cur_bufnr = bufnr('%')
-    if has_key(s:buffer_nrs, cur_bufnr)
-      " we are in a location list
-      execute bufwinnr(s:buffer_nrs[cur_bufnr]) . 'wincmd w'
-    else
-      return 1
+function! s:purge_tab() 
+  for buf_nr in keys(s:locate_ids)
+    if bufwinnr(str2nr(buf_nr)) !=# -1
+      execute 'bdelete ' . buf_nr
     endif
-  endif
-  call s:close_location_list(bufnr('%'))
-  return 0
+  endfor
+endfunction
+
+function! s:get_window_nr(locate_id)
+  " goes to the window with locate id
+  for win_nr in range(1, winnr('$'))
+    let locate_id = getwinvar(win_nr, 'locate_id')
+    if locate_id ==# a:locate_id
+      return win_nr
+    endif
+  endfor
 endfunction
 
 function! s:preserve_history_command()
@@ -197,14 +207,12 @@ endfunction
 function! s:open_location_list(wrapped_pattern, height, focus)
   " open location list (also does formatting and highlighting)
   let [nothing, empty_pattern, flags] = split(a:wrapped_pattern, a:wrapped_pattern[0], 1)
-  let cur_bufnr = bufnr('%')
   let preserve_cmd = s:preserve_history_command()
-  let match_id = s:generate_match_id()
-  call matchadd(g:locate_highlight, empty_pattern, 10, match_id)
+  let locate_id = s:generate_id()
+  let s:match_ids[locate_id] =  matchadd(g:locate_highlight, empty_pattern)
+  let w:locate_id = locate_id
   execute 'lopen ' . a:height
-  let loclist_bufnr = bufnr('%')
-  let s:buffer_nrs[loclist_bufnr] = cur_bufnr
-  let s:match_ids[loclist_bufnr] = match_id
+  let s:locate_ids[bufnr('%')] = locate_id
   call matchadd(g:locate_highlight, empty_pattern)
   setlocal modifiable
   silent execute '%s/^[^|]\+|\(\d\+\) col \(\d\+\)/\1|\2/'
@@ -212,21 +220,9 @@ function! s:open_location_list(wrapped_pattern, height, focus)
   setlocal nomodifiable
   setlocal foldcolumn=0
   silent execute 'normal! gg'
-  autocmd! BufWinLeave <buffer> call <SID>on_close_location_list()
+  autocmd! BufWinLeave <buffer> call <SID>remove_highlight(remove(s:locate_ids, expand('<abuf>')))
   if !a:focus
     execute preserve_cmd
-  endif
-endfunction
-
-function! s:on_close_location_list()
-  " clear location list and remove highlighting from associated window
-  let closed_bufnr = expand('<abuf>') . ''
-  if has_key(s:match_ids, closed_bufnr) && has_key(s:buffer_nrs, closed_bufnr)
-    let buffer_nr = remove(s:buffer_nrs, closed_bufnr)
-    let match_id = remove(s:match_ids,  closed_bufnr)
-    call s:remove_match(match_id)
-  else
-    throw 'Something has gone wrong!'
   endif
 endfunction
 
@@ -238,39 +234,39 @@ endif
 
 augroup locate
   autocmd!
-  autocmd BufEnter * nested call <SID>close_location_list(0)
+  autocmd BufEnter * nested call <SID>purge_hidden()
 augroup END
 
 function! locate#pattern(pattern, switch_focus)
   " main public function
   " finds matches of pattern
   " opens location list
-  let status = s:go_to_window()
-  if !s:go_to_window()
+  let cur_bufnr = bufnr('%')
+  if has_key(s:locate_ids, cur_bufnr)
+    execute cur_bufnr . 'wincmd w'
+  endif
+  if !&buftype
     let wrapped_pattern = s:locate(a:pattern)
+    let total_matches = len(getloclist(0))
+    execute 'lclose'
     redraw!
-    if strlen(wrapped_pattern)
-      let total_matches = len(getloclist(0))
-      echo total_matches . ' match(es) found.'
-      if total_matches
-        let height = min([total_matches, g:locate_max_height])
-        let focus = a:switch_focus ? !g:locate_focus : g:locate_focus
-        call s:open_location_list(wrapped_pattern, height, focus)
-      endif
-    else
-      echoerr 'No previous pattern found.'
+    echo total_matches . ' match(es) found.'
+    if total_matches
+      let height = min([total_matches, g:locate_max_height])
+      let focus = a:switch_focus ? !g:locate_focus : g:locate_focus
+      call s:open_location_list(wrapped_pattern, height, focus)
     endif
   else
     echoerr 'Invalid buffer.'
   endif
 endfunction
 
-function! locate#cword()
+function! locate#cword(switch_focus)
   " run locate on <cword>
-  call locate#pattern(expand('<cword>'), 0)
+  call locate#pattern(expand('<cword>'), a:switch_focus)
 endfunction
 
-function! locate#selection() range
+function! locate#selection(switch_focus) range
   " run locate on selection
   let [lnum1, col1] = getpos("'<")[1:2]
   let [lnum2, col2] = getpos("'>")[1:2]
@@ -279,23 +275,20 @@ function! locate#selection() range
     let line = line[: col2 - (&selection == 'inclusive' ? 1 : 2)]
     let line = line[col1 - 1:]
     let line = substitute(line, '\n', '', 'g')
-    call locate#pattern(line, 0)
+    call locate#pattern(line, a:switch_focus)
     execute 'normal `<'
   else
     echoerr 'Can only locate selection from inside a single line.'
   endif
 endfunction
 
-function! locate#refresh()
-  " refresh last locate search
-  call locate#pattern('', 0)
-endfunction
-
 function! locate#purge(all)
-  " close location lists associated with current or all buffers
+  " close location lists associated with current or all buffers in tab
   if a:all
-    call s:close_location_list(-1)
+    call s:purge_tab()
   else
-    call s:close_location_list(bufnr('%'))
+    if exists('w:locate_id')
+      call s:purge(w:locate_id)
+    endif
   endif
 endfunction
