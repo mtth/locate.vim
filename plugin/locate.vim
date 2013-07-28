@@ -30,8 +30,8 @@ if !exists('g:locate_smart_case')
 endif
 
 command! -bang -nargs=* Locate call locate#pattern(<q-args>, <bang>0)
-command! -bang -nargs=* Lo call locate#pattern(<q-args>, <bang>0)
-command! -bang LoPurge call locate#purge(<bang>0)
+command! -bang -nargs=* L call locate#pattern(<q-args>, <bang>0)
+command! -bang Lpurge call locate#purge(<bang>0)
 
 nnoremap <silent> gl :call locate#cword()<cr>
 vnoremap <silent> gl :call locate#selection()<cr>

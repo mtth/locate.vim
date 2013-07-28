@@ -1,12 +1,18 @@
 " locate.vim
 
+if exists('s:loaded')
+  finish
+else
+  let s:loaded = 1
+endif
+
 " dictionary of previous searches, indexed by buffer number (used when an
 " empty pattern is provided)
 let s:searches = {}
-" dictionary of match ids, indexed by location list buffer number
-let s:match_ids = {}
-" dictionary of buffer numbers, indexed by location list buffer number
+" dictionary of buffer numbers indexed by location list buffer number
 let s:buffer_nrs = {}
+" dictionary of match ids indexed by location list buffer number
+let s:match_ids = {}
 
 " Pattern operations
 
@@ -117,14 +123,50 @@ function! s:locate(pattern)
   endtry
 endfunction
 
+" Highlighting managing
+
+function! s:create_highlight_group(base_group)
+  " create highlight group Locate copied from base_group
+  let base_highlight = ''
+  redir => base_highlight
+  silent! execute 'highlight ' . a:base_group
+  redir END
+  let locate_highlight = split(base_highlight, '\n')[0]
+  let locate_highlight = substitute(locate_highlight, '^' . a:base_group . '\s\+xxx', '', '')
+  silent execute 'highlight Locate ' . locate_highlight
+endfunction
+
+function! s:generate_match_id()
+  " returns new unique match id
+  return max([4, max(values(s:match_ids)) + 1])
+endfunction
+
+function! s:remove_match(match_id)
+  " remove highlight corresponding to match id
+  let preserve_cmd = s:preserve_history_command()
+  for win_nr in range(1, winnr('$'))
+    execute win_nr . 'wincmd w'
+    try
+      call matchdelete(a:match_id)
+    catch /^Vim\%((\a\+)\)\=:E803/
+    endtry
+  endfor
+  execute preserve_cmd
+endfunction
+
 " Window handling
 
-function! s:close_location_lists(buf_nr)
+function! s:close_location_list(buf_nr)
   " close hidden location lists and list associated with buffer number buf_nr
   " if buf_nr = -1, close all location lists
   for [loc_nr, buf_nr] in items(s:buffer_nrs)
     if bufwinnr(buf_nr) ==# -1 || a:buf_nr ==# -1 || a:buf_nr ==# buf_nr
-      execute 'bdelete ' . loc_nr
+      if winnr('$') ==# 1
+        " only one window left (in tab)
+        quit
+      else
+        execute 'bdelete ' . loc_nr
+      endif
     endif
   endfor
 endfunction
@@ -143,7 +185,7 @@ function! s:go_to_window()
       return 1
     endif
   endif
-  call s:close_location_lists(bufnr('%'))
+  call s:close_location_list(bufnr('%'))
   return 0
 endfunction
 
@@ -157,7 +199,8 @@ function! s:open_location_list(wrapped_pattern, height, focus)
   let [nothing, empty_pattern, flags] = split(a:wrapped_pattern, a:wrapped_pattern[0], 1)
   let cur_bufnr = bufnr('%')
   let preserve_cmd = s:preserve_history_command()
-  let match_id = matchadd(g:locate_highlight, empty_pattern)
+  let match_id = s:generate_match_id()
+  call matchadd(g:locate_highlight, empty_pattern, 10, match_id)
   execute 'lopen ' . a:height
   let loclist_bufnr = bufnr('%')
   let s:buffer_nrs[loclist_bufnr] = cur_bufnr
@@ -179,16 +222,9 @@ function! s:on_close_location_list()
   " clear location list and remove highlighting from associated window
   let closed_bufnr = expand('<abuf>') . ''
   if has_key(s:match_ids, closed_bufnr) && has_key(s:buffer_nrs, closed_bufnr)
-    let match_id = remove(s:match_ids, closed_bufnr)
     let buffer_nr = remove(s:buffer_nrs, closed_bufnr)
-    let window_nr = bufwinnr(buffer_nr)
-    if winbufnr(window_nr) >=# 0
-      " if the window is still there, remove highlighting
-      let preserve_cmd = s:preserve_history_command()
-      execute window_nr . 'wincmd w'
-      call matchdelete(match_id)
-      execute preserve_cmd
-    endif
+    let match_id = remove(s:match_ids,  closed_bufnr)
+    call s:remove_match(match_id)
   else
     throw 'Something has gone wrong!'
   endif
@@ -196,9 +232,13 @@ endfunction
 
 " Public functions
 
+if strlen(g:locate_highlight)
+  call s:create_highlight_group(g:locate_highlight)
+endif
+
 augroup locate
   autocmd!
-  autocmd BufEnter * nested call <SID>close_location_lists(0)
+  autocmd BufEnter * nested call <SID>close_location_list(0)
 augroup END
 
 function! locate#pattern(pattern, switch_focus)
@@ -254,8 +294,8 @@ endfunction
 function! locate#purge(all)
   " close location lists associated with current or all buffers
   if a:all
-    call s:close_location_lists(-1)
+    call s:close_location_list(-1)
   else
-    call s:close_location_lists(bufnr('%'))
+    call s:close_location_list(bufnr('%'))
   endif
 endfunction
