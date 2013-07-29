@@ -1,4 +1,4 @@
-*locate.txt*   Locate stuff like there is no tomorrow.                  v1.0.0
+*locate.txt*   Locate stuff like there is no tomorrow.                  v1.1.0
 *Locate*
 
 The |:lvimgrep| you've always dreamed of.
@@ -11,6 +11,7 @@ CONTENTS                                                     *Locate-contents*
     2. Commands ........................ |LocateCommands|
       2.1 |:Locate|
       2.2 |:Lpurge|
+      2.3 |:Lrefresh|
     3. Mappings ........................ |LocateMappings|
     4. Configuration ..................... |LocateConfig|
       4.1 |g:locate_highlight|
@@ -45,7 +46,8 @@ Here are a few sample features provided:
 2.1 :L[ocate][!] <pattern>                                      *:L* *:Locate*
 
 Locate <pattern> in current window. <pattern> can be any regular expression or
-Vim search pattern. With [!], act as if |g:locate_focus|'s value was inverted.
+Vim search pattern. With [!], append search results to current location list
+(i.e. use |:vimgrepadd|).
 
 If <pattern> is enclosed in non-ID characters (optionally followed by the 'g'
 and 'j' flags), it will be passed through as is to the underlying |:vimgrep|
@@ -81,10 +83,16 @@ in the pattern. You don't need to worry about not using certain characters.
 
 
 ------------------------------------------------------------------------------
-2.2 :Lpurge[!]                                                        *Lpurge*
+2.2 :Lpurge[!]                                                       *:Lpurge*
 
 Close location list and clear locate search highlighting for current window.
 With the [!], do the same for all windows in current tab.
+
+
+------------------------------------------------------------------------------
+2.3 :Lrefresh                                                      *:Lrefresh*
+
+Refresh search for all active patterns in the current window.
 
 
 ==============================================================================
@@ -106,7 +114,8 @@ empty). This is to avoid ambiguity and keep location windows organized.
 ------------------------------------------------------------------------------
                                                                           *gL*
 
-Similar to |gl| but focuses the location list window after searching.
+Similar to |gl| but appends results to location list instead of replacing the
+current results.
 
 
 ==============================================================================
@@ -201,7 +210,7 @@ will override this setting.
 
 v1.1.0 (07/28/2013)
   * Automatic location list closing
-  * |:Lpurge| command
+  * |:Lpurge|, |:Lrefresh| commands
   * Multiple windows per buffer supported
   * Multiple tabs supported
 

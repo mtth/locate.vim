@@ -32,6 +32,7 @@ endif
 command! -bang -nargs=* Locate call locate#pattern(<q-args>, <bang>0)
 command! -bang -nargs=* L call locate#pattern(<q-args>, <bang>0)
 command! -bang Lpurge call locate#purge(<bang>0)
+command! Lrefresh call locate#refresh()
 
 nnoremap <silent> gl :call locate#cword(0)<cr>
 vnoremap <silent> gl :call locate#selection(0)<cr>
