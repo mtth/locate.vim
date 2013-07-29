@@ -97,6 +97,12 @@ endfunction
 
 " Searching
 
+function s:generate_id()
+  " return unique id used per window
+   let s:locate_index += 1
+   return s:locate_index
+endfunction
+
 function! s:locate(pattern, add)
   " runs lvimgrep for pattern in current window (also adds a mark at initial position)
   if !exists('w:locate_id')
@@ -157,10 +163,19 @@ endfunction
 
 " Window handling
 
-function s:generate_id()
-  " return unique id used per window
-   let s:locate_index += 1
-   return s:locate_index
+function! s:get_window_nr(locate_id)
+  " goes to the window with locate id
+  for win_nr in range(1, winnr('$'))
+    let locate_id = getwinvar(win_nr, 'locate_id')
+    if locate_id ==# a:locate_id
+      return win_nr
+    endif
+  endfor
+endfunction
+
+function! s:preserve_history_command()
+  " returns commands to go back to current window, preserving previous window as well
+  return winnr('#') . 'wincmd w | ' . winnr() . 'wincmd w'
 endfunction
 
 function! s:purge(locate_id)
@@ -202,21 +217,6 @@ function! s:purge_tab()
   endfor
 endfunction
 
-function! s:get_window_nr(locate_id)
-  " goes to the window with locate id
-  for win_nr in range(1, winnr('$'))
-    let locate_id = getwinvar(win_nr, 'locate_id')
-    if locate_id ==# a:locate_id
-      return win_nr
-    endif
-  endfor
-endfunction
-
-function! s:preserve_history_command()
-  " returns commands to go back to current window, preserving previous window as well
-  return winnr('#') . 'wincmd w | ' . winnr() . 'wincmd w'
-endfunction
-
 function! s:open_location_list(height, patterns)
   " open location list (also does formatting and highlighting)
   let locate_id = w:locate_id
@@ -246,10 +246,6 @@ function! s:open_location_list(height, patterns)
 endfunction
 
 " Public functions
-
-if strlen(g:locate_highlight)
-  call s:create_highlight_group(g:locate_highlight)
-endif
 
 function! locate#pattern(pattern, add)
   " main public function
@@ -296,6 +292,17 @@ function! locate#selection(add) range
   endif
 endfunction
 
+function! locate#purge(all)
+  " close location list(s) associated with current or all buffers in tab
+  if a:all
+    call s:purge_tab()
+  else
+    if exists('w:locate_id')
+      call s:purge(w:locate_id)
+    endif
+  endif
+endfunction
+
 function! locate#refresh(silent)
   " refresh location list(s) associated with current buffer
   if !exists('w:locate_id') || !has_key(s:searches, w:locate_id)
@@ -322,16 +329,11 @@ function! locate#refresh(silent)
   endif
 endfunction
 
-function! locate#purge(all)
-  " close location list(s) associated with current or all buffers in tab
-  if a:all
-    call s:purge_tab()
-  else
-    if exists('w:locate_id')
-      call s:purge(w:locate_id)
-    endif
-  endif
-endfunction
+" Setup
+
+if strlen(g:locate_highlight)
+  call s:create_highlight_group(g:locate_highlight)
+endif
 
 augroup locate_private
   autocmd!

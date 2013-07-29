@@ -16,7 +16,7 @@ Features
 * Responsive location list size
 * Window specific search match highlighting
 
-``:help Locate`` for more.
+``:help Locate`` for details and more.
 
 
 Installation
