@@ -5,7 +5,7 @@ The |:lvimgrep| you've always dreamed of.
 
 
 ==============================================================================
-CONTENTS                                                     *Locate-contents*
+CONTENTS                                                      *LocateContents*
 
     1. Intro .............................. |LocateIntro|
     2. Commands ........................ |LocateCommands|
@@ -22,6 +22,7 @@ CONTENTS                                                     *Locate-contents*
       4.6 |g:locate_jump|
       4.7 |g:locate_very_magic|
       4.8 |g:locate_smart_case|
+      4.9 |g:locate_refresh|
     5. Changes .......................... |LocateChanges|
 
 
@@ -47,10 +48,10 @@ Here are a few sample features provided:
 
 Locate <pattern> in current window. <pattern> can be any regular expression or
 Vim search pattern. With [!], append search results to current location list
-(i.e. use |:vimgrepadd|).
+(i.e. use |:lvimgrepadd|).
 
 If <pattern> is enclosed in non-ID characters (optionally followed by the 'g'
-and 'j' flags), it will be passed through as is to the underlying |:vimgrep|
+and 'j' flags), it will be passed through as is to the underlying |:lvimgrep|
 command. E.g.
 
   /hello/
@@ -86,7 +87,7 @@ in the pattern. You don't need to worry about not using certain characters.
 2.2 :Lpurge[!]                                                       *:Lpurge*
 
 Close location list and clear locate search highlighting for current window.
-With the [!], do the same for all windows in current tab.
+With [!], do the same for all windows in current tab.
 
 
 ------------------------------------------------------------------------------
@@ -103,8 +104,8 @@ Locate provides the following two mappings:
 ------------------------------------------------------------------------------
                                                                           *gl*
 
-In normal mode, gl will locate the word under the cursor (cf. |<cword>|).
-In visual mode, gl will locate the selection. Note that the selection can
+In normal mode, |gl| will locate the word under the cursor (cf. |<cword>|).
+In visual mode, |gl| will locate the selection. Note that the selection can
 not go over more than one line.
 
 Note that gl will only work in 'normal' buffers (i.e. where |'buftype'| is
@@ -192,10 +193,11 @@ setting.
 4.8 g:locate_smart_case = 1                              *g:locate_smart_case*
 
 Activate |'smartcase'| when searching for bare patterns. This behaves exactly
-like this option for normal searches. In particular:
+like the option for normal searches. In particular:
 
 * This has no effect if |'ignorecase'| is not set
 * If |'ignorecase'| is on:
+
   * if the bare pattern contains an uppercase letter, search will be
     case-sensitive
   * if the bare pattern contains only lowercase letters, search will be
@@ -203,6 +205,12 @@ like this option for normal searches. In particular:
 
 Manually setting the case sensitivity for the pattern by prepending \c or \C
 will override this setting.
+
+
+------------------------------------------------------------------------------
+4.9 g:locate_refresh = 0                                    *g:locate_refresh*
+
+Call |:Lrefresh| when the buffer in the current window is saved.
 
 
 ==============================================================================
