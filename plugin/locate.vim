@@ -35,14 +35,7 @@ endif
 command! -bang -nargs=* Locate call locate#pattern(<q-args>, <bang>0)
 command! -bang -nargs=* L call locate#pattern(<q-args>, <bang>0)
 command! -bang Lpurge call locate#purge(<bang>0)
-command! Lrefresh call locate#refresh()
-
-augroup locate_public
-  autocmd!
-  if g:locate_refresh
-    autocmd BufWrite * call locate#refresh()
-  endif
-augroup END
+command! -bang Lrefresh call locate#refresh(<bang>0)
 
 nnoremap <silent> gl :call locate#cword(0)<cr>
 vnoremap <silent> gl :call locate#selection(0)<cr>

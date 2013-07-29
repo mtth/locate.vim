@@ -14,15 +14,16 @@ CONTENTS                                                      *LocateContents*
       2.3 |:Lrefresh|
     3. Mappings ........................ |LocateMappings|
     4. Configuration ..................... |LocateConfig|
-      4.1 |g:locate_highlight|
-      4.2 |g:locate_initial_mark|
-      4.3 |g:locate_max_height|
-      4.4 |g:locate_focus|
-      4.5 |g:locate_global|
-      4.6 |g:locate_jump|
-      4.7 |g:locate_very_magic|
-      4.8 |g:locate_smart_case|
-      4.9 |g:locate_refresh|
+      4.1  |g:locate_highlight|
+      4.2  |g:locate_initial_mark|
+      4.3  |g:locate_max_height|
+      4.4  |g:locate_focus|
+      4.5  |g:locate_global|
+      4.6  |g:locate_jump|
+      4.7  |g:locate_very_magic|
+      4.8  |g:locate_smart_case|
+      4.9  |g:locate_refresh|
+      4.10 |g:locate_cursor|
     5. Changes .......................... |LocateChanges|
 
 
@@ -91,9 +92,10 @@ With [!], do the same for all windows in current tab.
 
 
 ------------------------------------------------------------------------------
-2.3 :Lrefresh                                                      *:Lrefresh*
+2.3 :Lrefresh[!]                                                   *:Lrefresh*
 
-Refresh search for all active patterns in the current window.
+Refresh search for all active patterns in the current window. With [!] only
+do so if there is a currently active search.
 
 
 ==============================================================================
@@ -213,8 +215,34 @@ will override this setting.
 Call |:Lrefresh| when the buffer in the current window is saved.
 
 
+------------------------------------------------------------------------------
+4.10 g:locate_position = 'stay'                            *g:locate_position*
+
+TODO:
+
+This option controls the position of the cursor after each search.
+
+TODO: Resolve interaction with |g:locate_jump| and |g:locate_mark|.
+
+Possible values:
+
+* 'stay': keep cursor in same position
+* 'first': go to first match in location list
+* 'next': go to match right after cursor (can wrap around)
+* 'closest': go to match closest to cursor
+
+Note that this option only affects the behavior of the |:Locate| command as
+|:Lrefresh| always keeps the cursor in the same position.
+
+
 ==============================================================================
 5. Changes                                                     *LocateChanges*
+
+v1.2.0 (?)
+  * Automatic location list refresh (done)
+  * Configurable cursor position (TODO)
+  * Sort matches (even after appending new patterns, maybe do it it
+    s:open_location_list, TODO)
 
 v1.1.0 (07/28/2013)
   * Automatic location list closing

@@ -10,9 +10,10 @@ The ``:lvimgrep`` you've always dreamed of.
 Features
 --------
 
-* Automatic pattern wrapping
-* Optional smart case and very magic mode
-* Responsive location list sizing
+* Smart pattern wrapping
+* Optional ``smartcase`` and ``very magic`` modes
+* Automatic search results updates
+* Responsive location list size
 * Window specific search match highlighting
 
 ``:help Locate`` for more.

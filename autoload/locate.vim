@@ -166,7 +166,7 @@ endfunction
 function! s:purge(locate_id)
   " close location list associated to this id
   for [buf_nr, locate_id] in items(s:locate_ids)
-    if locate_id ==# a:locate_id
+    if locate_id ==# a:locate_id && bufwinnr(str2nr(buf_nr)) !=# -1
       execute 'bdelete ' . buf_nr
     endif
   endfor
@@ -255,10 +255,6 @@ function! locate#pattern(pattern, add)
   " main public function
   " finds matches of pattern
   " opens location list
-  let cur_bufnr = bufnr('%')
-  if has_key(s:locate_ids, cur_bufnr)
-    execute cur_bufnr . 'wincmd w'
-  endif
   if !strlen(&buftype)
     execute 'lclose'
     let [locate_id, wrapped_pattern] = s:locate(a:pattern, a:add)
@@ -300,35 +296,29 @@ function! locate#selection(add) range
   endif
 endfunction
 
-function! locate#refresh()
+function! locate#refresh(silent)
   " refresh location list(s) associated with current buffer
-  let cur_bufnr = bufnr('%')
-  if has_key(s:locate_ids, cur_bufnr)
-    execute cur_bufnr . 'wincmd w'
-  endif
-  if !strlen(&buftype)
+  if !exists('w:locate_id') || !has_key(s:searches, w:locate_id)
+    if !a:silent
+      echoerr 'No searches to refresh.'
+    endif
+  elseif !a:silent || match(values(s:locate_ids), w:locate_id) ># -1
     let view = winsaveview()
     execute 'lclose'
-    if !exists('w:locate_id') || !has_key(s:searches, w:locate_id)
-      echoerr 'No searches to refresh.'
-    else
-      let searches = s:searches[w:locate_id]
-      let search_index = 0
-      for search in searches
-        call s:locate(search, search_index ># 0)
-        let search_index += 1
-      endfor
-      let total_matches = len(getloclist(0))
-      if total_matches
-        let height = min([total_matches, g:locate_max_height])
-        call s:open_location_list(height, searches)
-      endif
-      call winrestview(view)
-      redraw!
-      echo total_matches . ' match(es) found.'
+    let searches = s:searches[w:locate_id]
+    let search_index = 0
+    for search in searches
+      call s:locate(search, search_index ># 0)
+      let search_index += 1
+    endfor
+    let total_matches = len(getloclist(0))
+    if total_matches
+      let height = min([total_matches, g:locate_max_height])
+      call s:open_location_list(height, searches)
     endif
-  else
-    echoerr 'Invalid buffer.'
+    call winrestview(view)
+    redraw!
+    echo total_matches . ' match(es) found.'
   endif
 endfunction
 
@@ -346,4 +336,7 @@ endfunction
 augroup locate_private
   autocmd!
   autocmd BufEnter * nested call <SID>purge_hidden()
+  if g:locate_refresh
+    autocmd BufWrite * nested call locate#refresh(1)
+  endif
 augroup END
