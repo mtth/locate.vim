@@ -31,6 +31,9 @@ endif
 if !exists('g:locate_refresh')
   let g:locate_refresh = 0
 endif
+if !exists('g:locate_sort')
+  let g:locate_sort = 1
+endif
 
 command! -bang -nargs=* Locate call locate#pattern(<q-args>, <bang>0)
 command! -bang -nargs=* L call locate#pattern(<q-args>, <bang>0)

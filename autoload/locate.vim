@@ -103,6 +103,23 @@ function s:generate_id()
    return s:locate_index
 endfunction
 
+function! s:location_list_sorter(first, second)
+  " sort location list by line and column number
+  if a:first.lnum ># a:second.lnum
+    return 1
+  elseif a:first.lnum <# a:second.lnum
+    return -1
+  else
+    if a:first.col ># a:second.col
+      return 1
+    elseif a:first.col <# a:second.col
+      return -1
+    else
+      return 0
+    endif
+  endif
+endfunction
+
 function! s:locate(pattern, add)
   " runs lvimgrep for pattern in current window (also adds a mark at initial position)
   if !exists('w:locate_id')
@@ -126,6 +143,10 @@ function! s:locate(pattern, add)
     execute cmd . wrapped_pattern . ' %'
   catch /^Vim\%((\a\+)\)\=:E480/
   finally
+    let loclist = getloclist(0)
+    if len(loclist) && g:locate_sort
+      call setloclist(0, sort(loclist, 's:location_list_sorter'))
+    endif
     return [w:locate_id, wrapped_pattern]
   endtry
 endfunction
