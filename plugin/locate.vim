@@ -16,20 +16,20 @@ endif
 if !exists('g:locate_focus')
   let g:locate_focus = 0
 endif
-if !exists('g:locate_very_magic')
-  let g:locate_very_magic = 1
-endif
 if !exists('g:locate_global')
   let g:locate_global = 1
 endif
-if !exists('g:locate_jump')
-  let g:locate_jump = 1
+if !exists('g:locate_jump_to')
+  let g:locate_jump_to = 'first'
 endif
-if !exists('g:locate_smart_case')
-  let g:locate_smart_case = 1
+if !exists('g:locate_very_magic')
+  let g:locate_very_magic = 0
+endif
+if !exists('g:locate_smartcase')
+  let g:locate_smartcase = 1
 endif
 if !exists('g:locate_refresh')
-  let g:locate_refresh = 0
+  let g:locate_refresh = 1
 endif
 if !exists('g:locate_sort')
   let g:locate_sort = 1

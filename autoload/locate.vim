@@ -49,6 +49,29 @@ function! s:get_unused_non_identifier(pattern)
   throw 'All the non-ID characters are used!'
 endfunction
 
+function! s:get_case_mode(pattern)
+  " returns any pattern specified case mode
+  " note that any case insensitive flag will override others
+  if match(a:pattern, '\C\\c') >=# 0
+    return 'c'
+  elseif match(a:pattern, '\C\\C') >=# 0
+    return 'C'
+  else
+    return ''
+  endif
+endfunction
+
+function! s:get_magic_mode(pattern)
+  " return any pattern specified initial magic mode
+  " any magic mode toggles within the pattern are not detected
+  let matches = matchlist(a:pattern, '\C^\\\([mMvV]\)')
+  if len(matches)
+    return matches[1]
+  else
+    return ''
+  endif
+endfunction
+
 function! s:get_prefixes(pattern)
   " returns a list of prefix characters from pattern (e.g. c, V)
   let prefixes = []
@@ -77,9 +100,9 @@ function! s:wrap(pattern)
   if g:locate_global
     let flags .= 'g'
   endif
-  if !g:locate_jump
-    let flags .= 'j'
-  endif
+  " if !g:locate_jump
+  "   let flags .= 'j'
+  " endif
   let prefix = ''
   let prefixes = s:get_prefixes(a:pattern)
   if match(prefixes, '[cC]') <# 0 && &ignorecase
@@ -125,6 +148,7 @@ function! s:locate(pattern, add)
   if !exists('w:locate_id')
     let w:locate_id = s:generate_id()
   endif
+  let w:locate_bufnr = bufnr('%')
   if strlen(g:locate_initial_mark) && !a:add
     execute 'normal! m' . g:locate_initial_mark
   endif
@@ -151,7 +175,29 @@ function! s:locate(pattern, add)
   endtry
 endfunction
 
-" Highlighting managing
+" Jumps
+
+function! s:jump_to_next()
+  " jump to next match after cursor
+  return 1
+endfunction
+
+function! s:jump_to_closest()
+  return 1
+endfunction
+
+function! s:jump_to_match()
+  " jump to match depending on g:locate_jump_to
+  if g:locate_jump_to ==# 'first'
+    return
+  elseif g:locate_jump_to ==# 'next'
+    call s:jump_to_next()
+  else
+    echoerr 'Invalid g:locate_jump_to option: ' . g:locate_jump_to
+  endif
+endfunction
+
+" Highlighting
 
 function! s:create_highlight_group(base_group)
   " create highlight group Locate copied from base_group
@@ -167,7 +213,7 @@ endfunction
 function! s:remove_highlight(locate_id)
   " remove highlight corresponding to locate id
   let preserve_cmd = s:preserve_history_command()
-  let match_ids = remove(s:match_ids, a:locate_id) 
+  let match_ids = remove(s:match_ids, a:locate_id)
   for win_nr in range(1, winnr('$'))
     let locate_id = getwinvar(win_nr, 'locate_id')
     if locate_id ==# a:locate_id
@@ -210,10 +256,11 @@ endfunction
 
 function! s:purge_hidden()
   " close location lists where the associated window is not present
+  " also close location lists where associated buffer has changed
   let open_locate_ids = []
   for win_nr in range(1, winnr('$'))
     let locate_id = getwinvar(win_nr, 'locate_id')
-    if locate_id
+    if locate_id && winbufnr(win_nr) ==# getwinvar(win_nr, 'locate_bufnr')
       call add(open_locate_ids, locate_id)
     endif
   endfor
@@ -272,6 +319,7 @@ function! locate#pattern(pattern, add)
   " main public function
   " finds matches of pattern
   " opens location list
+  " jumps to match as determined by g:locate_jump_to
   if !strlen(&buftype)
     execute 'lclose'
     let [locate_id, wrapped_pattern] = s:locate(a:pattern, a:add)
@@ -325,7 +373,11 @@ function! locate#purge(all)
 endfunction
 
 function! locate#refresh(silent)
-  " refresh location list(s) associated with current buffer
+  " refresh location list associated with current buffer
+  " if silent is true, only does so if the location list is open and keeps the
+  " cursor in place always
+  " if silent is false, repeats last search and jumps to match (determined by
+  " g:locate_jump_to) or raises an error if there is no search to refresh
   if !exists('w:locate_id') || !has_key(s:searches, w:locate_id)
     if !a:silent
       echoerr 'No searches to refresh.'
@@ -344,7 +396,9 @@ function! locate#refresh(silent)
       let height = min([total_matches, g:locate_max_height])
       call s:open_location_list(height, searches)
     endif
-    call winrestview(view)
+    if a:silent
+      call winrestview(view)
+    endif
     redraw!
     echo total_matches . ' match(es) found.'
   endif

@@ -19,12 +19,11 @@ CONTENTS                                                      *LocateContents*
       4.3  |g:locate_max_height|
       4.4  |g:locate_focus|
       4.5  |g:locate_global|
-      4.6  |g:locate_jump|
+      4.6  |g:locate_jump_to|
       4.7  |g:locate_very_magic|
-      4.8  |g:locate_smart_case|
+      4.8  |g:locate_smartcase|
       4.9  |g:locate_refresh|
-      4.10 |g:locate_position|
-      4.11 |g:locate_sort|
+      4.10 |g:locate_sort|
     5. Changes .......................... |LocateChanges|
 
 
@@ -47,14 +46,14 @@ Here are a few sample features provided:
 
 ------------------------------------------------------------------------------
 2.1 :L[ocate][!] <pattern>                                      *:L* *:Locate*
+    :L[ocate][!] /<pattern>/[gG]
 
-Locate <pattern> in current window. <pattern> can be any regular expression or
-Vim search pattern. With [!], append search results to current location list
-(i.e. use |:lvimgrepadd|).
+Locate <pattern> in current window and load matches in location list. With 
+[!], append search results to current location list (i.e. use |:lvimgrepadd|).
 
-If <pattern> is enclosed in non-ID characters (optionally followed by the 'g'
-and 'j' flags), it will be passed through as is to the underlying |:lvimgrep|
-command. E.g.
+<pattern> can be any regular expression or Vim search pattern. If <pattern> is 
+enclosed in non-ID characters (optionally followed by the 'g' and 'j' flags), 
+it will be passed through as is to the underlying |:lvimgrep| command. E.g.
 
   /hello/
   #hello world!#g
@@ -63,9 +62,8 @@ In any other case, <pattern> will be automatically upgraded to a Vim search
 pattern based on the following configuration options:
 
   * |g:locate_global|
-  * |g:locate_jump|
   * |g:locate_very_magic|
-  * |g:locate_smart_case|
+  * |g:locate_smartcase|
 
 Examples of transformed patterns (with default configuration options):
 
@@ -95,8 +93,8 @@ With [!], do the same for all windows in current tab.
 ------------------------------------------------------------------------------
 2.3 :Lrefresh[!]                                                   *:Lrefresh*
 
-Refresh search for all active patterns in the current window. With [!] only
-do so if there is a currently active search.
+Refresh search for all active patterns in the current window. With [!] only do 
+so if there is a currently active search and keep cursor in place.
 
 
 ==============================================================================
@@ -143,15 +141,15 @@ highlights at any given time and potentially of different colors. For
 example 'pandocDefinitionTerm' looks good if you are using Solarized 
 (https://github.com/altercation/vim-colors-solarized).
 
-Set this option to an empty string to disable any Locate specific
+Set this option to an empty string to disable any Locate specific 
 highlighting.
 
 
 ------------------------------------------------------------------------------
 4.2 g:locate_initial_mark = 'l'                        *g:locate_initial_mark*
 
-By default, Locate sets a mark  at the position of the cursor before running
-a search. This is useful to jump back to work after doing any search related
+By default, Locate sets a mark  at the position of the cursor before running a 
+search. This is useful to jump back to work after doing any search related 
 edits. This option controls which mark is used.
 
 Set this option to an empty string to disable this behavior.
@@ -160,8 +158,8 @@ Set this option to an empty string to disable this behavior.
 ------------------------------------------------------------------------------
 4.3 g:locate_max_height = 20                             *g:locate_max_height*
 
-Set the maximum height of the location list window opened by Locate. The
-location list window will be adequately sized depending on the number of
+Set the maximum height of the location list window opened by Locate. The 
+location list window will be adequately sized depending on the number of 
 search results.
 
 
@@ -174,73 +172,72 @@ Focus the location list window automatically after each search.
 ------------------------------------------------------------------------------
 4.5 g:locate_global = 1                                      *g:locate_global*
 
-Activate the 'g' flag by default when searching for bare patterns.
+Make all locate searches global, i.e. count multiple matches on a single line 
+as separate matches. You can override this behavior by appending a 'G' flag to 
+the search pattern.
 
 
 ------------------------------------------------------------------------------
-4.6 g:locate_jump = 1                                          *g:locate_jump*
-
-Jump to first match automatically when searching for bare patterns.
-
-
-------------------------------------------------------------------------------
-4.7 g:locate_very_magic = 1                              *g:locate_very_magic*
-
-Make every bare pattern 'very magic' (cf. |'magic'|) by default.
-
-Prepending a magic flag to the pattern (i.e. \v, \V, \m, \M) will override this
-setting.
-
-
-------------------------------------------------------------------------------
-4.8 g:locate_smart_case = 1                              *g:locate_smart_case*
-
-Activate |'smartcase'| when searching for bare patterns. This behaves exactly
-like the option for normal searches. In particular:
-
-* This has no effect if |'ignorecase'| is not set
-* If |'ignorecase'| is on:
-
-  * if the bare pattern contains an uppercase letter, search will be
-    case-sensitive
-  * if the bare pattern contains only lowercase letters, search will be
-    case-insensitive
-
-Manually setting the case sensitivity for the pattern by prepending \c or \C
-will override this setting.
-
-
-------------------------------------------------------------------------------
-4.9 g:locate_refresh = 0                                    *g:locate_refresh*
-
-Call |:Lrefresh| when the buffer in the current window is saved.
-
-
-------------------------------------------------------------------------------
-4.10 g:locate_position = 'stay'                            *g:locate_position*
+4.6 g:locate_jump_to = 'first'                              *g:locate_jump_to*
 
 TODO:
 
 This option controls the position of the cursor after each search.
 
-TODO: Resolve interaction with |g:locate_jump| and |g:locate_mark|.
+Resolve interaction with |g:locate_stay| and |g:locate_mark|. Probably do this 
+by always jumping to a search result (otherwise state consistency with 
+currently selected location list item and cursor position is lost).
 
 Possible values:
 
-* 'stay': keep cursor in same position
 * 'first': go to first match in location list
 * 'next': go to match right after cursor (can wrap around)
-* 'closest': go to match closest to cursor
+* 'closest': go to match closest to cursor (can be above or below current 
+  cursor position).
 
-Note that this option only affects the behavior of the |:Locate| command as
+Note that this option only affects the behavior of the |:Locate| command as 
 |:Lrefresh| always keeps the cursor in the same position.
+
+Actually -> no make :Lrefresh with a [!] jump to match (again respecting this 
+option). Or opposite, having [!] trigger silent refresh.
 
 
 ------------------------------------------------------------------------------
-4.11 g:locate_sort = 1                                         *g:locate_sort*
+4.7 g:locate_very_magic = 0                              *g:locate_very_magic*
 
-Keep the location list sorted by line and column number. This is relevant
-when using |:L| with [!].
+Add a very magic flag prefix '\v' to all search patterns (cf. |'magic'|), 
+unless one is already specified (i.e. the search patterns starts with one of 
+'\v', '\V', '\m', '\M').
+
+
+------------------------------------------------------------------------------
+4.8 g:locate_smartcase = 1                                *g:locate_smartcase*
+
+Activate |'smartcase'| when searching for patterns. This behaves exactly like 
+the option for normal searches:
+
+* This has no effect if |'ignorecase'| is not set or if the search pattern 
+  already contains a case sensitivity flag (i.e. '\c' or '\C')
+* Otherwise:
+
+  * If the pattern contains an uppercase letter, search will be case-sensitive
+  * If the pattern contains only lowercase letters, search will be 
+    case-insensitive
+
+
+------------------------------------------------------------------------------
+4.9 g:locate_refresh = 1                                    *g:locate_refresh*
+
+Refresh location search results when the buffer in the current window is 
+saved. Note that this will only trigger if the location list window is open at 
+that time.
+
+
+------------------------------------------------------------------------------
+4.10 g:locate_sort = 1                                         *g:locate_sort*
+
+Keep the location list sorted by line and column number. This is relevant when 
+using |:Locate| with [!].
 
 
 ==============================================================================
@@ -249,6 +246,9 @@ when using |:L| with [!].
 v1.2.0 (?)
   * |g:locate_sort|, |g:locate_refresh| options
   * Configurable cursor position (TODO)
+  * Use last search term if empty pattern (TODO)
+  * Close highlighting when switching buffer in same window (or have 
+    persistent option which will only trigger a search refresh instead)
 
 v1.1.0 (07/28/2013)
   * Automatic location list closing
