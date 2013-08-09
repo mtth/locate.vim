@@ -8,7 +8,7 @@ if !exists('g:locate_highlight')
   let g:locate_highlight = 'Search'
 endif
 if !exists('g:locate_initial_mark')
-  let g:locate_initial_mark = 'l'
+  let g:locate_initial_mark = ''
 endif
 if !exists('g:locate_max_height')
   let g:locate_max_height = 20

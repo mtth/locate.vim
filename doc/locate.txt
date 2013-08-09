@@ -1,4 +1,4 @@
-*locate.txt*   Locate stuff like there is no tomorrow.                  v1.2.0
+*locate.txt*   Search no further.                                       v1.2.0
 *Locate*
 
 The |:lvimgrep| you've always dreamed of.
@@ -35,7 +35,7 @@ command, with searches automatically being done in the current window.
 
 Here are a few sample features provided:
 
-* Smart pattern wrapping with optional ``smartcase`` and ``very magic`` modes
+* Smart pattern wrapping with optional smartcase and very magic modes
 * Automatic search results sorting and updating
 * Responsive location list sizing
 * Customizable window specific search match highlighting
@@ -130,13 +130,11 @@ highlighting.
 
 
 ------------------------------------------------------------------------------
-4.2 g:locate_initial_mark = 'l'                        *g:locate_initial_mark*
+4.2 g:locate_initial_mark = ''                         *g:locate_initial_mark*
 
-By default, Locate sets a mark  at the position of the cursor before running a 
-search. This is useful to jump back to work after doing any search related 
-edits. This option controls which mark is used.
-
-Set this option to an empty string to disable this behavior.
+Locate can set a mark at the position of the cursor before running a search. 
+This is useful to jump back to work after doing any search related edits. To 
+activate this option, simply set this option to the mark that will be used.
 
 Note finally that this mark isn't set when using |:Locate| with [!].
 
