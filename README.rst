@@ -11,7 +11,7 @@ Features
 --------
 
 * Smart pattern wrapping with optional ``smartcase`` and ``very magic`` modes
-* Automatic search results sorting and updating
+* Automatic sorting and updating of search results
 * Responsive location list sizing
 * Customizable window specific highlighting
 
