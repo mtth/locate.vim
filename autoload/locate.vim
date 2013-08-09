@@ -72,23 +72,12 @@ function! s:get_magic_mode(pattern)
   endif
 endfunction
 
-function! s:get_prefixes(pattern)
-  " returns a list of prefix characters from pattern (e.g. c, V)
-  let prefixes = []
-  let pattern = a:pattern
-  while pattern[0] ==# '\'
-    call add(prefixes, pattern[1])
-    let pattern = pattern[2:]
-  endwhile
-  return prefixes
-endfunction
-
 function! s:is_wrapped(pattern)
   " check if pattern is validly wrapped
   let char = a:pattern[0]
   if !s:is_identifier(char)
     let parts = split(a:pattern, char, 1)
-    return len(parts) ==# 3 && match(parts[2], '[^gj]') <# 0
+    return len(parts) ==# 3 && match(parts[2], '[^gG]') <# 0
   endif
   return 0
 endfunction
@@ -100,22 +89,29 @@ function! s:wrap(pattern)
   if g:locate_global
     let flags .= 'g'
   endif
-  " if !g:locate_jump
-  "   let flags .= 'j'
-  " endif
   let prefix = ''
-  let prefixes = s:get_prefixes(a:pattern)
-  if match(prefixes, '[cC]') <# 0 && &ignorecase
+  if !strlen(s:get_case_mode(a:pattern)) && &ignorecase
     if g:locate_smart_case && match(a:pattern, '\C[A-Z]') >=# 0
       let prefix .= '\C'
     else
       let prefix .= '\c'
     endif
   endif
-  if match(prefixes, '[vVmM]') <# 0 && g:locate_very_magic
+  if !strlen(s:get_magic_mode(a:pattern)) && g:locate_very_magic
     let prefix .= '\v'
   endif
   return wrapper . prefix . a:pattern . wrapper . flags
+endfunction
+
+function s:convert(pattern)
+  " convert pattern from locate format to lvimgrep format
+  let char = a:pattern[0]
+  let [empty, contents, flags] = split(a:pattern, char, 1)
+  if match(flags, '\Cg') >=# 0
+    return char . contents . char . 'gj'
+  else
+    return char . contents . char . 'j'
+  endif
 endfunction
 
 " Searching
@@ -152,7 +148,9 @@ function! s:locate(pattern, add)
   if strlen(g:locate_initial_mark) && !a:add
     execute 'normal! m' . g:locate_initial_mark
   endif
-  if s:is_wrapped(a:pattern)
+  if !strlen(a:pattern)
+    let wrapped_pattern = s:wrap(getreg('/'))
+  elseif s:is_wrapped(a:pattern)
     let wrapped_pattern = a:pattern
   else
     let wrapped_pattern = s:wrap(a:pattern)
@@ -164,7 +162,7 @@ function! s:locate(pattern, add)
   endif
   echo 'Locating: ' . wrapped_pattern
   try
-    execute cmd . wrapped_pattern . ' %'
+    execute cmd . s:convert(wrapped_pattern) . ' %'
   catch /^Vim\%((\a\+)\)\=:E480/
   finally
     let loclist = getloclist(0)
@@ -177,22 +175,26 @@ endfunction
 
 " Jumps
 
-function! s:jump_to_next()
-  " jump to next match after cursor
+function! s:get_next(position)
+  " get line number of next location list match
+  let elem_index = 1
+  for elem in getloclist(0)
+    if elem['lnum'] <# a:position[1]
+      let elem_index += 1
+    else
+      return elem_index
+    endif
+  endfor
   return 1
 endfunction
 
-function! s:jump_to_closest()
-  return 1
-endfunction
-
-function! s:jump_to_match()
+function! s:jump(position)
   " jump to match depending on g:locate_jump_to
   if g:locate_jump_to ==# 'first'
-    return
+    execute '1ll'
   elseif g:locate_jump_to ==# 'next'
-    call s:jump_to_next()
-  else
+    execute s:get_next(a:position) . 'll'
+  elseif g:locate_jump_to !=# 'stay'
     echoerr 'Invalid g:locate_jump_to option: ' . g:locate_jump_to
   endif
 endfunction
@@ -231,7 +233,7 @@ endfunction
 " Window handling
 
 function! s:get_window_nr(locate_id)
-  " goes to the window with locate id
+  " get the window number associated with locate id
   for win_nr in range(1, winnr('$'))
     let locate_id = getwinvar(win_nr, 'locate_id')
     if locate_id ==# a:locate_id
@@ -289,6 +291,7 @@ function! s:open_location_list(height, patterns)
   " open location list (also does formatting and highlighting)
   let locate_id = w:locate_id
   let preserve_cmd = s:preserve_history_command()
+  let position = getpos('.')
   let s:match_ids[locate_id] = []
   let empty_patterns = []
   for pattern in a:patterns
@@ -297,7 +300,8 @@ function! s:open_location_list(height, patterns)
     call add(empty_patterns, empty_pattern)
   endfor
   execute 'lopen ' . a:height
-  let s:locate_ids[bufnr('%')] = locate_id
+  let list_bufnr = bufnr('%')
+  let s:locate_ids[list_bufnr] = locate_id
   for empty_pattern in empty_patterns
     call matchadd(g:locate_highlight, empty_pattern)
   endfor
@@ -308,7 +312,10 @@ function! s:open_location_list(height, patterns)
   setlocal foldcolumn=0
   silent execute 'normal! gg'
   autocmd! BufWinLeave <buffer> call <SID>remove_highlight(remove(s:locate_ids, expand('<abuf>')))
-  if !g:locate_focus
+  call s:jump(position)
+  if g:locate_focus
+    execute list_bufnr . 'wincmd w'
+  else
     execute preserve_cmd
   endif
 endfunction

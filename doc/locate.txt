@@ -51,21 +51,23 @@ Here are a few sample features provided:
 Locate <pattern> in current window and load matches in location list. With 
 [!], append search results to current location list (i.e. use |:lvimgrepadd|).
 
-<pattern> can be any regular expression or Vim search pattern. If <pattern> is 
-enclosed in non-ID characters (optionally followed by the 'g' and 'j' flags), 
-it will be passed through as is to the underlying |:lvimgrep| command. E.g.
+<pattern> can be any regular expression. If <pattern> is enclosed in non-ID 
+characters (optionally followed by a g or G flag, see below), it will be 
+passed through as is to the underlying |:lvimgrep| command. E.g. the
+following patterns would remain the same:
 
   /hello/
   #hello world!#g
 
-In any other case, <pattern> will be automatically upgraded to a Vim search
-pattern based on the following configuration options:
+In any other case, <pattern> will be automatically upgraded based on the 
+following configuration options:
 
   * |g:locate_global|
   * |g:locate_very_magic|
   * |g:locate_smartcase|
 
-Examples of transformed patterns (with default configuration options):
+Examples of transformed patterns (assuming |g:locate_very_magic| = 1 and 
+|g:locate_smartcase| = 1):
 
       hello
   =>  /\v\chello/g
@@ -79,8 +81,16 @@ Examples of transformed patterns (with default configuration options):
       /\mhello/world
   =>  #/\m\chello/world#g
 
-Note that Locate will only wrap patterns with non-ID characters that are not
-in the pattern. You don't need to worry about not using certain characters.
+You can override this behavior by specifying these options directly (e.g. by 
+adding a case sensitivity flag to the pattern or prefixing the pattern with a 
+magic mode flag). You can also change the local/global search mode by 
+appending one of the following flags to your pattern:
+
+* 'g': make search global
+* 'G': make search local
+
+If an empty pattern is specified, the latest searched pattern (using regular 
+search) will be used.
 
 
 ------------------------------------------------------------------------------
@@ -180,26 +190,13 @@ the search pattern.
 ------------------------------------------------------------------------------
 4.6 g:locate_jump_to = 'first'                              *g:locate_jump_to*
 
-TODO:
-
 This option controls the position of the cursor after each search.
-
-Resolve interaction with |g:locate_stay| and |g:locate_mark|. Probably do this 
-by always jumping to a search result (otherwise state consistency with 
-currently selected location list item and cursor position is lost).
 
 Possible values:
 
 * 'first': go to first match in location list
-* 'next': go to match right after cursor (can wrap around)
-* 'closest': go to match closest to cursor (can be above or below current 
-  cursor position).
-
-Note that this option only affects the behavior of the |:Locate| command as 
-|:Lrefresh| always keeps the cursor in the same position.
-
-Actually -> no make :Lrefresh with a [!] jump to match (again respecting this 
-option). Or opposite, having [!] trigger silent refresh.
+* 'next': go to next match after cursor (can wrap around)
+* 'stay': keep cursor in place
 
 
 ------------------------------------------------------------------------------
@@ -244,11 +241,7 @@ using |:Locate| with [!].
 5. Changes                                                     *LocateChanges*
 
 v1.2.0 (?)
-  * |g:locate_sort|, |g:locate_refresh| options
-  * Configurable cursor position (TODO)
-  * Use last search term if empty pattern (TODO)
-  * Close highlighting when switching buffer in same window (or have 
-    persistent option which will only trigger a search refresh instead)
+  * |g:locate_sort|, |g:locate_refresh|, |g:locate_jump_to| options
 
 v1.1.0 (07/28/2013)
   * Automatic location list closing
