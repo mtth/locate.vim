@@ -23,7 +23,7 @@ if !exists('g:locate_jump_to')
   let g:locate_jump_to = 'first'
 endif
 if !exists('g:locate_very_magic')
-  let g:locate_very_magic = 0
+  let g:locate_very_magic = 1
 endif
 if !exists('g:locate_smartcase')
   let g:locate_smartcase = 1

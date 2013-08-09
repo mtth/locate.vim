@@ -1,4 +1,4 @@
-*locate.txt*   Locate stuff like there is no tomorrow.                  v1.1.0
+*locate.txt*   Locate stuff like there is no tomorrow.                  v1.2.0
 *Locate*
 
 The |:lvimgrep| you've always dreamed of.
@@ -35,62 +35,37 @@ command, with searches automatically being done in the current window.
 
 Here are a few sample features provided:
 
-  * Automatic pattern wrapping
-  * Optional smart case  and very magic mode
-  * Customizable search match highlighting
+* Smart pattern wrapping with optional ``smartcase`` and ``very magic`` modes
+* Automatic search results sorting and updating
+* Responsive location list sizing
+* Customizable window specific search match highlighting
 
 
 ==============================================================================
 2. Commands                                                   *LocateCommands*
 
+Locate provides the following three commands:
 
 ------------------------------------------------------------------------------
 2.1 :L[ocate][!] <pattern>                                      *:L* *:Locate*
-    :L[ocate][!] /<pattern>/[gG]
+    :L[ocate][!] /<pattern>/
 
 Locate <pattern> in current window and load matches in location list. With 
-[!], append search results to current location list (i.e. use |:lvimgrepadd|).
+[!], append search results to current location list.
 
-<pattern> can be any regular expression. If <pattern> is enclosed in non-ID 
-characters (optionally followed by a g or G flag, see below), it will be 
-passed through as is to the underlying |:lvimgrep| command. E.g. the
-following patterns would remain the same:
+<pattern> can be any Vim regular expression. If no pattern is specified, the 
+latest searched pattern (cf. |quote/|) will be used instead. Optionally, 
+<pattern> can be wrapped by any non-ID character (cf. |'isident'|) to allow 
+searching for patterns starting or ending with a space.
 
-  /hello/
-  #hello world!#g
+See the following options for more information:
 
-In any other case, <pattern> will be automatically upgraded based on the 
-following configuration options:
+* |g:locate_very_magic|
+* |g:locate_smartcase|
+* |g:locate_jump_to|
+* |g:locate_global|
 
-  * |g:locate_global|
-  * |g:locate_very_magic|
-  * |g:locate_smartcase|
-
-Examples of transformed patterns (assuming |g:locate_very_magic| = 1 and 
-|g:locate_smartcase| = 1):
-
-      hello
-  =>  /\v\chello/g
-
-      Hello
-  =>  /\v\CHello/g
-
-      /\v\Chello world! 
-  =>  #/\v\Chello world!#g
-
-      /\mhello/world
-  =>  #/\m\chello/world#g
-
-You can override this behavior by specifying these options directly (e.g. by 
-adding a case sensitivity flag to the pattern or prefixing the pattern with a 
-magic mode flag). You can also change the local/global search mode by 
-appending one of the following flags to your pattern:
-
-* 'g': make search global
-* 'G': make search local
-
-If an empty pattern is specified, the latest searched pattern (using regular 
-search) will be used.
+Under the hood, |:Locate| uses |:lvimgrep| and |:Locate!| uses |:lvimgrepadd|.
 
 
 ------------------------------------------------------------------------------
@@ -135,7 +110,6 @@ current results.
 
 You can tame Locate by changing the following options.
 
-
 ------------------------------------------------------------------------------
 4.1 g:locate_highlight = 'Search'                         *g:locate_highlight*
 
@@ -164,6 +138,8 @@ edits. This option controls which mark is used.
 
 Set this option to an empty string to disable this behavior.
 
+Note finally that this mark isn't set when using |:Locate| with [!].
+
 
 ------------------------------------------------------------------------------
 4.3 g:locate_max_height = 20                             *g:locate_max_height*
@@ -190,12 +166,12 @@ the search pattern.
 ------------------------------------------------------------------------------
 4.6 g:locate_jump_to = 'first'                              *g:locate_jump_to*
 
-This option controls the position of the cursor after each search.
+This option controls the position of the cursor after each search. The 
+following values are available:
 
-Possible values:
-
-* 'first': go to first match in location list
+* 'first': go to first match in location list (default |:lvimgrep| behavior)
 * 'next': go to next match after cursor (can wrap around)
+* 'closest': go to closest match (can be before or after cursor)
 * 'stay': keep cursor in place
 
 
@@ -210,8 +186,8 @@ unless one is already specified (i.e. the search patterns starts with one of
 ------------------------------------------------------------------------------
 4.8 g:locate_smartcase = 1                                *g:locate_smartcase*
 
-Activate |'smartcase'| when searching for patterns. This behaves exactly like 
-the option for normal searches:
+Activate |'smartcase'| when searching. This behaves exactly like the same 
+option for normal searches:
 
 * This has no effect if |'ignorecase'| is not set or if the search pattern 
   already contains a case sensitivity flag (i.e. '\c' or '\C')
@@ -240,7 +216,7 @@ using |:Locate| with [!].
 ==============================================================================
 5. Changes                                                     *LocateChanges*
 
-v1.2.0 (?)
+v1.2.0 (08/09/2013)
   * |g:locate_sort|, |g:locate_refresh|, |g:locate_jump_to| options
 
 v1.1.0 (07/28/2013)

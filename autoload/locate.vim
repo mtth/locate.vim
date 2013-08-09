@@ -77,7 +77,7 @@ function! s:is_wrapped(pattern)
   let char = a:pattern[0]
   if !s:is_identifier(char)
     let parts = split(a:pattern, char, 1)
-    return len(parts) ==# 3 && match(parts[2], '[^gG]') <# 0
+    return len(parts) ==# 3 && !strlen(parts[2])
   endif
   return 0
 endfunction
@@ -85,33 +85,27 @@ endfunction
 function! s:wrap(pattern)
   " wrap pattern and add user setting
   let wrapper = s:get_unused_non_identifier(a:pattern)
-  let flags = ''
+  let flags = 'j'
   if g:locate_global
     let flags .= 'g'
   endif
+  if s:is_wrapped(a:pattern)
+    let empty_pattern = split(a:pattern, a:pattern[0])
+  else
+    let empty_pattern = a:pattern
+  endif
   let prefix = ''
-  if !strlen(s:get_case_mode(a:pattern)) && &ignorecase
-    if g:locate_smart_case && match(a:pattern, '\C[A-Z]') >=# 0
+  if !strlen(s:get_case_mode(empty_pattern)) && &ignorecase
+    if g:locate_smart_case && match(empty_pattern, '\C[A-Z]') >=# 0
       let prefix .= '\C'
     else
       let prefix .= '\c'
     endif
   endif
-  if !strlen(s:get_magic_mode(a:pattern)) && g:locate_very_magic
+  if !strlen(s:get_magic_mode(empty_pattern)) && g:locate_very_magic
     let prefix .= '\v'
   endif
-  return wrapper . prefix . a:pattern . wrapper . flags
-endfunction
-
-function s:convert(pattern)
-  " convert pattern from locate format to lvimgrep format
-  let char = a:pattern[0]
-  let [empty, contents, flags] = split(a:pattern, char, 1)
-  if match(flags, '\Cg') >=# 0
-    return char . contents . char . 'gj'
-  else
-    return char . contents . char . 'j'
-  endif
+  return  wrapper . prefix . empty_pattern . wrapper . flags
 endfunction
 
 " Searching
@@ -150,8 +144,6 @@ function! s:locate(pattern, add)
   endif
   if !strlen(a:pattern)
     let wrapped_pattern = s:wrap(getreg('/'))
-  elseif s:is_wrapped(a:pattern)
-    let wrapped_pattern = a:pattern
   else
     let wrapped_pattern = s:wrap(a:pattern)
   endif
@@ -162,14 +154,14 @@ function! s:locate(pattern, add)
   endif
   echo 'Locating: ' . wrapped_pattern
   try
-    execute cmd . s:convert(wrapped_pattern) . ' %'
+    execute cmd . wrapped_pattern . ' %'
   catch /^Vim\%((\a\+)\)\=:E480/
   finally
     let loclist = getloclist(0)
     if len(loclist) && g:locate_sort
       call setloclist(0, sort(loclist, 's:location_list_sorter'))
     endif
-    return [w:locate_id, wrapped_pattern]
+    return w:locate_id
   endtry
 endfunction
 
@@ -181,11 +173,37 @@ function! s:get_next(position)
   for elem in getloclist(0)
     if elem['lnum'] <# a:position[1]
       let elem_index += 1
+    elseif elem['lnum'] ==# a:position[1] && elem['col'] <=# a:position[2]
+      let elem_index += 1
     else
       return elem_index
     endif
   endfor
   return 1
+endfunction
+
+function! s:get_closest(position)
+  " get line number of next location list match
+  let elem_index = 0
+  let min_line_distance = 1 / 0
+  for elem in getloclist(0)
+    let elem_line_distance = abs(elem['lnum'] - a:position[1])
+    let elem_col_distance = abs(elem['col'] - a:position[2])
+    if elem_line_distance <# min_line_distance
+      let min_line_distance = elem_line_distance
+      let min_col_distance = elem_col_distance
+    elseif elem_line_distance ==# min_line_distance
+      if elem_col_distance <# min_col_distance
+        let min_col_distance = elem_col_distance
+      elseif elem_line_distance ==# 0
+        return elem_index
+      endif
+    else
+      return elem_index
+    endif
+    let elem_index += 1
+  endfor
+  return elem_index
 endfunction
 
 function! s:jump(position)
@@ -194,6 +212,8 @@ function! s:jump(position)
     execute '1ll'
   elseif g:locate_jump_to ==# 'next'
     execute s:get_next(a:position) . 'll'
+  elseif g:locate_jump_to ==# 'closest'
+    execute s:get_closest(a:position) . 'll'
   elseif g:locate_jump_to !=# 'stay'
     echoerr 'Invalid g:locate_jump_to option: ' . g:locate_jump_to
   endif
@@ -295,7 +315,11 @@ function! s:open_location_list(height, patterns)
   let s:match_ids[locate_id] = []
   let empty_patterns = []
   for pattern in a:patterns
-    let [nothing, empty_pattern, flags] = split(pattern, pattern[0], 1)
+    if s:is_wrapped(pattern)
+      let [nothing, empty_pattern, flags] = split(pattern, pattern[0], 1)
+    else
+      let empty_pattern = pattern
+    endif
     call add(s:match_ids[locate_id], matchadd(g:locate_highlight, empty_pattern))
     call add(empty_patterns, empty_pattern)
   endfor
@@ -306,7 +330,7 @@ function! s:open_location_list(height, patterns)
     call matchadd(g:locate_highlight, empty_pattern)
   endfor
   setlocal modifiable
-  silent execute '%s/^[^|]\+|\(\d\+\) col \(\d\+\)/\1|\2/'
+  silent execute '%s/^[^|]\+|\(\d\+\) col \(\d\+\)/%|\1,\2/'
   setlocal nomodified
   setlocal nomodifiable
   setlocal foldcolumn=0
@@ -329,12 +353,12 @@ function! locate#pattern(pattern, add)
   " jumps to match as determined by g:locate_jump_to
   if !strlen(&buftype)
     execute 'lclose'
-    let [locate_id, wrapped_pattern] = s:locate(a:pattern, a:add)
+    let locate_id = s:locate(a:pattern, a:add)
     let total_matches = len(getloclist(0))
     if !a:add || !has_key(s:searches, locate_id)
-      let s:searches[locate_id] = [wrapped_pattern]
+      let s:searches[locate_id] = [a:pattern]
     else
-      call add(s:searches[locate_id], wrapped_pattern)
+      call add(s:searches[locate_id], a:pattern)
     endif
     redraw!
     echo total_matches . ' match(es) found.'
