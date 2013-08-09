@@ -88,7 +88,7 @@ so if there is a currently active search and keep cursor in place.
 Locate provides the following two mappings:
 
 ------------------------------------------------------------------------------
-                                                                          *gl*
+                                                                   *gl* *v_gl*
 
 In normal mode, |gl| will locate the word under the cursor (cf. |<cword>|).
 In visual mode, |gl| will locate the selection. Note that the selection can
@@ -99,7 +99,7 @@ empty). This is to avoid ambiguity and keep location windows organized.
 
 
 ------------------------------------------------------------------------------
-                                                                          *gL*
+                                                                   *gL* *v_gL*
 
 Similar to |gl| but appends results to location list instead of replacing the
 current results.

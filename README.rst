@@ -13,7 +13,7 @@ Features
 * Smart pattern wrapping with optional ``smartcase`` and ``very magic`` modes
 * Automatic search results sorting and updating
 * Responsive location list sizing
-* Customizable window specific search match highlighting
+* Customizable window specific highlighting
 
 ``:help Locate`` for details and more.
 
