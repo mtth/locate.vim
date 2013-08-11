@@ -157,8 +157,7 @@ Focus the location list window automatically after each search.
 4.5 g:locate_global = 1                                      *g:locate_global*
 
 Make all locate searches global, i.e. count multiple matches on a single line 
-as separate matches. You can override this behavior by appending a 'G' flag to 
-the search pattern.
+as separate matches.
 
 
 ------------------------------------------------------------------------------
@@ -182,7 +181,7 @@ unless one is already specified (i.e. the search patterns starts with one of
 
 
 ------------------------------------------------------------------------------
-4.8 g:locate_smartcase = 1                                *g:locate_smartcase*
+4.8 g:locate_smartcase = 0                                *g:locate_smartcase*
 
 Activate |'smartcase'| when searching. This behaves exactly like the same 
 option for normal searches:
