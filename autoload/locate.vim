@@ -13,7 +13,7 @@ let s:locate_ids = {}
 " dictionary of match ids indexed by locate id
 let s:match_ids = {}
 " dictionary of list of searches index by locate id
-let s:searches = {}
+let s:patterns = {}
 
 " Pattern operations
 
@@ -49,63 +49,14 @@ function! s:get_unused_non_identifier(pattern)
   throw 'All the non-ID characters are used!'
 endfunction
 
-function! s:get_case_mode(pattern)
-  " returns any pattern specified case mode
-  " note that any case insensitive flag will override others
-  if match(a:pattern, '\C\\c') >=# 0
-    return 'c'
-  elseif match(a:pattern, '\C\\C') >=# 0
-    return 'C'
-  else
-    return ''
-  endif
-endfunction
-
-function! s:get_magic_mode(pattern)
-  " return any pattern specified initial magic mode
-  " any magic mode toggles within the pattern are not detected
-  let matches = matchlist(a:pattern, '\C^\\\([mMvV]\)')
-  if len(matches)
-    return matches[1]
-  else
-    return ''
-  endif
-endfunction
-
-function! s:is_wrapped(pattern)
-  " check if pattern is validly wrapped
-  let char = a:pattern[0]
-  if !s:is_identifier(char)
-    let parts = split(a:pattern, char, 1)
-    return len(parts) ==# 3 && !strlen(parts[2])
-  endif
-  return 0
-endfunction
-
-function! s:wrap(pattern)
-  " wrap pattern and add user setting
+function! s:wrap(pattern, global)
+  " wrap single pattern and add lvimgrep user setting
   let wrapper = s:get_unused_non_identifier(a:pattern)
-  let flags = 'j'
-  if g:locate_global
-    let flags .= 'g'
+  let vimgrep_flags = 'j'
+  if a:global
+    let vimgrep_flags .= 'g'
   endif
-  if s:is_wrapped(a:pattern)
-    let empty_pattern = split(a:pattern, a:pattern[0])
-  else
-    let empty_pattern = a:pattern
-  endif
-  let prefix = ''
-  if !strlen(s:get_case_mode(empty_pattern)) && &ignorecase
-    if g:locate_smart_case && match(empty_pattern, '\C[A-Z]') >=# 0
-      let prefix .= '\C'
-    else
-      let prefix .= '\c'
-    endif
-  endif
-  if !strlen(s:get_magic_mode(empty_pattern)) && g:locate_very_magic
-    let prefix .= '\v'
-  endif
-  return  wrapper . prefix . empty_pattern . wrapper . flags
+  return  wrapper . a:pattern . wrapper . vimgrep_flags
 endfunction
 
 " Searching
@@ -133,47 +84,52 @@ function! s:location_list_sorter(first, second)
   endif
 endfunction
 
-function! s:locate(pattern, add)
-  " runs lvimgrep for pattern in current window (also adds a mark at initial position)
+function! s:locate(pattern, global, add)
+  " runs lvimgrep for single pattern in current window
   if !exists('w:locate_id')
     let w:locate_id = s:generate_id()
   endif
   let w:locate_bufnr = bufnr('%')
-  if strlen(g:locate_initial_mark) && !a:add
-    execute 'normal! m' . g:locate_initial_mark
-  endif
   if !strlen(a:pattern)
-    let wrapped_pattern = s:wrap(getreg('/'))
+    let wrapped_pattern = s:wrap(getreg('/'), a:global)
   else
-    let wrapped_pattern = s:wrap(a:pattern)
+    let wrapped_pattern = s:wrap(a:pattern, a:global)
   endif
   if a:add
     let cmd = 'lvimgrepadd '
   else
     let cmd = 'lvimgrep '
   endif
-  echo 'Locating: ' . wrapped_pattern
   try
     execute cmd . wrapped_pattern . ' %'
   catch /^Vim\%((\a\+)\)\=:E480/
   finally
-    let loclist = getloclist(0)
-    if len(loclist) && g:locate_sort
-      call setloclist(0, sort(loclist, 's:location_list_sorter'))
-    endif
     return w:locate_id
   endtry
 endfunction
 
+function! s:locate_multiple(patterns, global, add)
+  " locate several patterns and sort location list if necessary
+  let locate_id = s:locate(a:patterns[0], a:global, a:add)
+  for pattern in a:patterns[1:]
+    call s:locate(pattern, a:global, 1)
+  endfor
+  let loclist = getloclist(0)
+  if len(loclist) && g:locate_sort
+    call setloclist(0, sort(loclist, 's:location_list_sorter'))
+  endif
+  return locate_id
+endfunction
+
 " Jumps
 
-function! s:get_next(position)
-  " get line number of next location list match
+function! s:get_next(cursor)
+  " get line number of next location list match after cursor position
   let elem_index = 1
   for elem in getloclist(0)
-    if elem['lnum'] <# a:position[1]
+    if elem['lnum'] <# a:cursor[1]
       let elem_index += 1
-    elseif elem['lnum'] ==# a:position[1] && elem['col'] <=# a:position[2]
+    elseif elem['lnum'] ==# a:cursor[1] && elem['col'] <=# a:cursor[2]
       let elem_index += 1
     else
       return elem_index
@@ -182,13 +138,13 @@ function! s:get_next(position)
   return 1
 endfunction
 
-function! s:get_closest(position)
-  " get line number of next location list match
+function! s:get_closest(cursor)
+  " get line number of next location list match after cursor position
   let elem_index = 0
   let min_line_distance = 1 / 0
   for elem in getloclist(0)
-    let elem_line_distance = abs(elem['lnum'] - a:position[1])
-    let elem_col_distance = abs(elem['col'] - a:position[2])
+    let elem_line_distance = abs(elem['lnum'] - a:cursor[1])
+    let elem_col_distance = abs(elem['col'] - a:cursor[2])
     if elem_line_distance <# min_line_distance
       let min_line_distance = elem_line_distance
       let min_col_distance = elem_col_distance
@@ -206,15 +162,15 @@ function! s:get_closest(position)
   return elem_index
 endfunction
 
-function! s:jump(position)
+function! s:jump(cursor, position)
   " jump to match depending on g:locate_jump_to
-  if g:locate_jump_to ==# 'first'
+  if a:position ==# 'f'
     execute '1ll'
-  elseif g:locate_jump_to ==# 'next'
-    execute s:get_next(a:position) . 'll'
-  elseif g:locate_jump_to ==# 'closest'
-    execute s:get_closest(a:position) . 'll'
-  elseif g:locate_jump_to !=# 'stay'
+  elseif a:position ==# 'n'
+    execute s:get_next(a:cursor) . 'll'
+  elseif a:position ==# 'c'
+    execute s:get_closest(a:cursor) . 'll'
+  elseif a:position !=# 's'
     echoerr 'Invalid g:locate_jump_to option: ' . g:locate_jump_to
   endif
 endfunction
@@ -307,27 +263,20 @@ function! s:purge_tab()
   endfor
 endfunction
 
-function! s:open_location_list(height, patterns)
+function! s:open_location_list(height, patterns, position)
   " open location list (also does formatting and highlighting)
   let locate_id = w:locate_id
   let preserve_cmd = s:preserve_history_command()
-  let position = getpos('.')
+  let cursor = getpos('.')
   let s:match_ids[locate_id] = []
-  let empty_patterns = []
   for pattern in a:patterns
-    if s:is_wrapped(pattern)
-      let [nothing, empty_pattern, flags] = split(pattern, pattern[0], 1)
-    else
-      let empty_pattern = pattern
-    endif
-    call add(s:match_ids[locate_id], matchadd(g:locate_highlight, empty_pattern))
-    call add(empty_patterns, empty_pattern)
+    call add(s:match_ids[locate_id], matchadd(g:locate_highlight, pattern))
   endfor
   execute 'lopen ' . a:height
   let list_bufnr = bufnr('%')
   let s:locate_ids[list_bufnr] = locate_id
-  for empty_pattern in empty_patterns
-    call matchadd(g:locate_highlight, empty_pattern)
+  for pattern in a:patterns
+    call matchadd(g:locate_highlight, pattern)
   endfor
   setlocal modifiable
   silent execute '%s/^[^|]\+|\(\d\+\) col \(\d\+\)/%|\1,\2/'
@@ -336,7 +285,7 @@ function! s:open_location_list(height, patterns)
   setlocal foldcolumn=0
   silent execute 'normal! gg'
   autocmd! BufWinLeave <buffer> call <SID>remove_highlight(remove(s:locate_ids, expand('<abuf>')))
-  call s:jump(position)
+  call s:jump(cursor, a:position)
   if g:locate_focus
     execute list_bufnr . 'wincmd w'
   else
@@ -344,27 +293,102 @@ function! s:open_location_list(height, patterns)
   endif
 endfunction
 
+" Input parsing
+
+function! s:get_option(flags, values, default)
+  " return last specified flag among values
+  for flag in reverse(split(a:flags, '.\zs'))
+    if match(a:values, '\C' . flag) >=# 0
+      return flag
+    endif
+  endfor
+  return a:default
+endfunction
+
+function! s:get_case_mode(pattern)
+  " returns any pattern specified case mode
+  " note that any case insensitive flag will override others
+  if match(a:pattern, '\C\\c') >=# 0
+    return 'c'
+  elseif match(a:pattern, '\C\\C') >=# 0
+    return 'C'
+  else
+    return ''
+  endif
+endfunction
+
+function! s:get_magic_mode(pattern)
+  " return any pattern specified initial magic mode
+  " any magic mode toggles within the pattern are not detected
+  let matches = matchlist(a:pattern, '\C^\\\([mMvV]\)')
+  if len(matches)
+    return matches[1]
+  else
+    return ''
+  endif
+endfunction
+
+function! s:parse(input)
+  " parse user input and return patterns and flags
+  let char = a:input[0]
+  let flags = ''
+  if !s:is_identifier(char)
+    let parts = split(a:input, char, 1)
+    if match(parts[-1], '\C^[glfncs]*$') <# 0
+      " doesn't seem like flags at the end, consider pattern as raw
+      let raw_patterns = [a:input]
+    else
+      let raw_patterns = parts[1:-2]
+      let flags .= parts[-1]
+    endif
+  else
+    let raw_patterns = [a:input]
+  endif
+  let patterns = []
+  for pattern in raw_patterns
+    let prefix = ''
+    if !strlen(s:get_case_mode(pattern)) && &ignorecase
+      if g:locate_smart_case && match(pattern, '\C[A-Z]') >=# 0
+        let prefix .= '\C'
+      else
+        let prefix .= '\c'
+      endif
+    endif
+    if !strlen(s:get_magic_mode(pattern)) && g:locate_very_magic
+      let prefix .= '\v'
+    endif
+    call add(patterns, prefix . pattern)
+  endfor
+  return {'patterns': patterns,
+         \'global': s:get_option(flags, 'gl', g:locate_global ? 'g' : 'l'),
+         \'position': s:get_option(flags, 'fncs', g:locate_jump_to[0])}
+endfunction
+
 " Public functions
 
-function! locate#pattern(pattern, add)
+function! locate#pattern(input, add)
   " main public function
   " finds matches of pattern
   " opens location list
   " jumps to match as determined by g:locate_jump_to
   if !strlen(&buftype)
+    if strlen(g:locate_initial_mark)
+      execute 'normal! m' . g:locate_initial_mark
+    endif
     execute 'lclose'
-    let locate_id = s:locate(a:pattern, a:add)
-    let total_matches = len(getloclist(0))
-    if !a:add || !has_key(s:searches, locate_id)
-      let s:searches[locate_id] = [a:pattern]
+    let inputs = s:parse(a:input)
+    let locate_id = s:locate_multiple(inputs.patterns, inputs.global ==# 'g', a:add)
+    if !a:add || !has_key(s:patterns, locate_id)
+      let s:patterns[locate_id] = inputs.patterns
     else
-      call add(s:searches[locate_id], a:pattern)
+      call extend(s:patterns[locate_id], inputs.patterns)
     endif
     redraw!
+    let total_matches = len(getloclist(0))
     echo total_matches . ' match(es) found.'
     if total_matches
       let height = min([total_matches, g:locate_max_height])
-      call s:open_location_list(height, s:searches[locate_id])
+      call s:open_location_list(height, s:patterns[locate_id], inputs.position)
     endif
   else
     echoerr 'Invalid buffer.'
@@ -403,35 +427,33 @@ function! locate#purge(all)
   endif
 endfunction
 
-function! locate#refresh(silent)
+function! locate#refresh(flags, silent)
   " refresh location list associated with current buffer
   " if silent is true, only does so if the location list is open and keeps the
   " cursor in place always
   " if silent is false, repeats last search and jumps to match (determined by
   " g:locate_jump_to) or raises an error if there is no search to refresh
-  if !exists('w:locate_id') || !has_key(s:searches, w:locate_id)
+  if !exists('w:locate_id') || !has_key(s:patterns, w:locate_id)
     if !a:silent
       echoerr 'No searches to refresh.'
     endif
   elseif !a:silent || match(values(s:locate_ids), w:locate_id) ># -1
     let view = winsaveview()
     execute 'lclose'
-    let searches = s:searches[w:locate_id]
-    let search_index = 0
-    for search in searches
-      call s:locate(search, search_index ># 0)
-      let search_index += 1
-    endfor
+    let patterns = s:patterns[w:locate_id]
+    let global = s:get_option(a:flags, 'gl', g:locate_global ? 'g' : 'l')
+    call s:locate_multiple(patterns, global ==# 'g', 0)
     let total_matches = len(getloclist(0))
     if total_matches
       let height = min([total_matches, g:locate_max_height])
-      call s:open_location_list(height, searches)
+      let position = s:get_option(a:flags, 'fncs', g:locate_jump_to[0])
+      call s:open_location_list(height, patterns, position)
     endif
     if a:silent
       call winrestview(view)
+    else
+      echo total_matches . ' match(es) found.'
     endif
-    redraw!
-    echo total_matches . ' match(es) found.'
   endif
 endfunction
 
