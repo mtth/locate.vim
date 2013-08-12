@@ -38,8 +38,8 @@ if !exists('g:locate_mappings')
   let g:locate_mappings = 1
 endif
 
-command! -bang -nargs=* Locate call locate#pattern(<q-args>, <bang>0)
-command! -bang -nargs=* L call locate#pattern(<q-args>, <bang>0)
+command! -bang -nargs=* Locate call locate#input(<q-args>, <bang>0)
+command! -bang -nargs=* L call locate#input(<q-args>, <bang>0)
 command! -bang Lpurge call locate#purge(<bang>0)
 command! -bang -nargs=? Lrefresh call locate#refresh(<q-args>, <bang>0)
 

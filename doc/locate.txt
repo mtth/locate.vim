@@ -1,4 +1,4 @@
-*locate.txt*   Search no further.                                       v1.2.0
+*locate.txt*   Search no further.                                       v1.3.0
 *Locate*
 
 The |:lvimgrep| you've always dreamed of.
@@ -36,10 +36,11 @@ command, with searches automatically being done in the current window.
 
 Here are a few sample features provided:
 
-* Smart pattern wrapping with optional smartcase and very magic modes
-* Automatic search results sorting and updating
+* Customizable window specific highlighting
+* Automatic sorting and updating of search results
 * Responsive location list sizing
-* Customizable window specific search match highlighting
+* Optional 'smartcase' and 'very magic' modes
+* Simple multiple searches by chaining patterns
 
 
 ==============================================================================
@@ -244,8 +245,8 @@ that time.
 ------------------------------------------------------------------------------
 4.10 g:locate_sort = 1                                         *g:locate_sort*
 
-Keep the location list sorted by line and column number. This is relevant when 
-using |:Locate| with [!].
+Keep the location list sorted by line and column number. This is especially 
+relevant when using |:Locate| with [!].
 
 ------------------------------------------------------------------------------
 4.11 g:locate_mappings = 1                                 *g:locate_mappings*
@@ -256,10 +257,10 @@ Create locate mappings.
 ==============================================================================
 5. Changes                                                     *LocateChanges*
 
-v1.3.0 (?)
+v1.3.0 (08/12/2013)
   * Search specific flags
-  * |g:locate_mappings|
-  * Search for multiple patterns at once /<first>/<first_flags>/<second>/...
+  * Multiple patterns chaining
+  * |g:locate_mappings| option
 
 v1.2.0 (08/09/2013)
   * |g:locate_sort|, |g:locate_refresh|, |g:locate_jump_to| options

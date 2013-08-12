@@ -366,7 +366,7 @@ endfunction
 
 " Public functions
 
-function! locate#pattern(input, add)
+function! locate#input(input, add)
   " main public function
   " finds matches of pattern
   " opens location list
@@ -397,7 +397,7 @@ endfunction
 
 function! locate#cword(add)
   " run locate on <cword>
-  call locate#pattern(expand('<cword>'), a:add)
+  call locate#input(expand('<cword>'), a:add)
 endfunction
 
 function! locate#selection(add) range
@@ -409,8 +409,7 @@ function! locate#selection(add) range
     let line = line[: col2 - (&selection == 'inclusive' ? 1 : 2)]
     let line = line[col1 - 1:]
     let line = substitute(line, '\n', '', 'g')
-    call locate#pattern(line, a:add)
-    execute 'normal `<'
+    call locate#input(line, a:add)
   else
     echoerr 'Can only locate selection from inside a single line.'
   endif
@@ -467,6 +466,6 @@ augroup locate_private
   autocmd!
   autocmd BufEnter * nested call <SID>purge_hidden()
   if g:locate_refresh
-    autocmd BufWrite * nested call locate#refresh(1)
+    autocmd BufWrite * nested call locate#refresh('', 1)
   endif
 augroup END
