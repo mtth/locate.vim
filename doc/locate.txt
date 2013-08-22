@@ -1,4 +1,4 @@
-*locate.txt*   Search no further.                                       v1.3.0
+*locate.txt*   Search no further.                                       v1.3.1
 *Locate*
 
 The |:lvimgrep| you've always dreamed of.
@@ -256,6 +256,10 @@ Create locate mappings.
 
 ==============================================================================
 5. Changes                                                     *LocateChanges*
+
+v1.3.1 (08/22/2013)
+  * Trigger auto-refresh on BufWritePost instead of BufWrite to avoid 
+    conflicts with other plugins (e.g. Syntastic)
 
 v1.3.0 (08/12/2013)
   * Search specific flags

@@ -464,8 +464,8 @@ endif
 
 augroup locate_private
   autocmd!
-  autocmd BufEnter * nested call <SID>purge_hidden()
+  autocmd BufEnter * nested silent call <SID>purge_hidden()
   if g:locate_refresh
-    autocmd BufWrite * nested call locate#refresh('', 1)
+    autocmd BufWritePost * nested silent call locate#refresh('', 1)
   endif
 augroup END
