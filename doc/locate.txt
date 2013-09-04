@@ -180,7 +180,7 @@ E.g.
 Global search for 'hello', irrespective of |g:locate_global|.
 >
   :Locate /hello/l
-
+<
 Local search for 'hello', irrespective of |g:locate_global|.
 
 ------------------------------------------------------------------------------
@@ -246,7 +246,7 @@ that time.
 4.10 g:locate_sort = 1                                         *g:locate_sort*
 
 Keep the location list sorted by line and column number. This is especially 
-relevant when using |:Locate| with [!].
+relevant when using |:Locate| with [!] or when chaining patterns.
 
 ------------------------------------------------------------------------------
 4.11 g:locate_mappings = 1                                 *g:locate_mappings*

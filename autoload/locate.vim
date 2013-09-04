@@ -282,7 +282,6 @@ function! s:open_location_list(height, patterns, position)
   silent execute '%s/^[^|]\+|\(\d\+\) col \(\d\+\)/%|\1,\2/'
   setlocal nomodified
   setlocal nomodifiable
-  setlocal foldcolumn=0
   silent execute 'normal! gg'
   autocmd! BufWinLeave <buffer> call <SID>remove_highlight(remove(s:locate_ids, expand('<abuf>')))
   call s:jump(cursor, a:position)
