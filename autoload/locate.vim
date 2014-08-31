@@ -177,6 +177,16 @@ endfunction
 
 " Highlighting
 
+function! s:highlight_exists()
+  " check if Locate highlighting exists
+  try
+    silent execute 'highlight Locate'
+  catch /^Vim\%((\a\+)\)\=:E411/
+    return 0
+  endtry
+  return 1
+endfunction
+
 function! s:create_highlight_group(base_group)
   " create highlight group Locate copied from base_group
   let base_highlight = ''
@@ -269,15 +279,19 @@ function! s:open_location_list(height, patterns, position)
   let preserve_cmd = s:preserve_history_command()
   let cursor = getpos('.')
   let s:match_ids[locate_id] = []
-  for pattern in a:patterns
-    call add(s:match_ids[locate_id], matchadd(g:locate_highlight, pattern))
-  endfor
+  if s:highlight_exists()
+    for pattern in a:patterns
+      call add(s:match_ids[locate_id], matchadd('Locate', pattern))
+    endfor
+  endif
   execute 'lopen ' . a:height
   let list_bufnr = bufnr('%')
   let s:locate_ids[list_bufnr] = locate_id
-  for pattern in a:patterns
-    call matchadd(g:locate_highlight, pattern)
-  endfor
+  if s:highlight_exists()
+    for pattern in a:patterns
+      call matchadd('Locate', pattern)
+    endfor
+  endif
   setlocal modifiable
   silent execute '%s/^[^|]\+|\(\d\+\) col \(\d\+\)/%|\1,\2/'
   setlocal nomodified
@@ -457,7 +471,7 @@ endfunction
 
 " Setup
 
-if strlen(g:locate_highlight)
+if strlen(g:locate_highlight) && !s:highlight_exists()
   call s:create_highlight_group(g:locate_highlight)
 endif
 

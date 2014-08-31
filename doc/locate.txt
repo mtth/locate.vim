@@ -1,4 +1,4 @@
-*locate.txt*   Search no further.                                       v1.3.1
+*locate.txt*   Vim's missing search.                                    v1.3.2
 *Locate*
 
 The |:lvimgrep| you've always dreamed of.
@@ -127,20 +127,18 @@ You can tame Locate by changing the following options.
 ------------------------------------------------------------------------------
 4.1 g:locate_highlight = 'Search'                         *g:locate_highlight*
 
-Highlight style of Locate matches.
+Highlight style of Locate matches (you can view the list of available 
+highlights by running |:highlight|).
 
 Highlighting is specific to the buffer search and refreshed automatically 
 when a new Locate search is done. When the location list is closed, the 
 highlighting is turned off.
 
-Note that this highlighting is separate from the global search highlighting 
-(triggered by |'hlsearch'|). In particular, this enables you to have several 
-highlights at any given time and potentially of different colors. For 
-example 'pandocDefinitionTerm' looks good if you are using Solarized 
-(https://github.com/altercation/vim-colors-solarized).
+Note that in particular this highlighting is separate from the global search 
+highlighting (triggered by |'hlsearch'|). This enables you to have several 
+highlights at any given time and potentially of different colors.
 
-Set this option to an empty string to disable any Locate specific 
-highlighting.
+Set this option to an empty string to disable any Locate specific highlighting.
 
 ------------------------------------------------------------------------------
 4.2 g:locate_initial_mark = ''                         *g:locate_initial_mark*
@@ -256,6 +254,9 @@ Create locate mappings.
 
 ==============================================================================
 5. Changes                                                     *LocateChanges*
+
+v1.3.2 (08/31/2014)
+  * Better highlighting configuration. Also allow disabling of highlighting.
 
 v1.3.1 (08/22/2013)
   * Trigger auto-refresh on BufWritePost instead of BufWrite to avoid 
