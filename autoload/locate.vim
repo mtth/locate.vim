@@ -382,9 +382,13 @@ endfunction
 
 function! locate#input(input, add)
   " main public function
+  " jump to window if in locate list for that window
   " finds matches of pattern
   " opens location list
   " jumps to match as determined by g:locate_jump_to
+  if has_key(s:locate_ids, bufnr('%'))
+    execute 'll'
+  endif
   if !strlen(&buftype)
     if strlen(g:locate_initial_mark)
       execute 'normal! m' . g:locate_initial_mark
