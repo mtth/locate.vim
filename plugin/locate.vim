@@ -17,10 +17,10 @@ if !exists('g:locate_focus')
   let g:locate_focus = 1
 endif
 if !exists('g:locate_global')
-  let g:locate_global = 1
+  let g:locate_global = 0
 endif
 if !exists('g:locate_jump_to')
-  let g:locate_jump_to = 'stay'
+  let g:locate_jump_to = 'next'
 endif
 if !exists('g:locate_very_magic')
   let g:locate_very_magic = 0

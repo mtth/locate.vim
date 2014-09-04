@@ -129,7 +129,7 @@ function! s:get_next(cursor)
   for elem in getloclist(0)
     if elem['lnum'] <# a:cursor[1]
       let elem_index += 1
-    elseif elem['lnum'] ==# a:cursor[1] && elem['col'] <=# a:cursor[2]
+    elseif elem['lnum'] ==# a:cursor[1] && elem['col'] <# a:cursor[2]
       let elem_index += 1
     else
       return elem_index
@@ -265,7 +265,7 @@ function! s:purge_hidden()
   endfor
 endfunction
 
-function! s:purge_tab() 
+function! s:purge_tab()
   for buf_nr in keys(s:locate_ids)
     if bufwinnr(str2nr(buf_nr)) !=# -1
       execute 'bdelete ' . buf_nr
@@ -273,7 +273,7 @@ function! s:purge_tab()
   endfor
 endfunction
 
-function! s:open_location_list(height, patterns, position)
+function! s:open_location_list(height, patterns, position, silent)
   " open location list (also does formatting and highlighting)
   let locate_id = w:locate_id
   let preserve_cmd = s:preserve_history_command()
@@ -300,7 +300,7 @@ function! s:open_location_list(height, patterns, position)
   silent execute 'normal! gg'
   autocmd! BufWinLeave <buffer> call <SID>remove_highlight(remove(s:locate_ids, expand('<abuf>')))
   call s:jump(cursor, a:position)
-  if g:locate_focus
+  if g:locate_focus && !a:silent
     execute list_winnr . 'wincmd w'
   else
     execute preserve_cmd
@@ -402,7 +402,7 @@ function! locate#input(input, add)
     echo total_matches . ' match(es) found.'
     if total_matches
       let height = min([total_matches, g:locate_max_height])
-      call s:open_location_list(height, s:patterns[locate_id], inputs.position)
+      call s:open_location_list(height, s:patterns[locate_id], inputs.position, 0)
     endif
   else
     echoerr 'Invalid buffer.'
@@ -460,7 +460,7 @@ function! locate#refresh(flags, silent)
     if total_matches
       let height = min([total_matches, g:locate_max_height])
       let position = s:get_option(a:flags, 'fncs', g:locate_jump_to[0])
-      call s:open_location_list(height, patterns, position)
+      call s:open_location_list(height, patterns, position, a:silent)
     endif
     if a:silent
       call winrestview(view)
