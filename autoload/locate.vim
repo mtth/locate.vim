@@ -129,7 +129,7 @@ function! s:get_next(cursor)
   for elem in getloclist(0)
     if elem['lnum'] <# a:cursor[1]
       let elem_index += 1
-    elseif elem['lnum'] ==# a:cursor[1] && elem['col'] <# a:cursor[2]
+    elseif elem['lnum'] ==# a:cursor[1] && elem['col'] <=# a:cursor[2]
       let elem_index += 1
     else
       return elem_index

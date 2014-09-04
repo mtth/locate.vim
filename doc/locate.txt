@@ -256,6 +256,7 @@ Create locate mappings.
 v1.3.3 (09/04/2014)
   * Changed defaults for |g:locate_focus|, |g:locate_highlight| and 
     |g:locate_jump_to|.
+  * Allowed searching from a locate window.
 
 v1.3.2 (08/31/2014)
   * Better highlighting configuration. Also allow disabling of highlighting.
