@@ -1,7 +1,5 @@
-*locate.txt*   Vim's missing search.                                    v1.3.2
+*locate.txt*   Vim's missing search.                                    v1.3.3
 *Locate*
-
-The |:lvimgrep| you've always dreamed of.
 
 
 ==============================================================================
@@ -155,7 +153,7 @@ location list window will be adequately sized depending on the number of
 search results.
 
 ------------------------------------------------------------------------------
-4.4 g:locate_focus = 0                                        *g:locate_focus*
+4.4 g:locate_focus = 1                                        *g:locate_focus*
 
 Focus the location list window automatically after each search.
 
@@ -182,24 +180,24 @@ Global search for 'hello', irrespective of |g:locate_global|.
 Local search for 'hello', irrespective of |g:locate_global|.
 
 ------------------------------------------------------------------------------
-4.6 g:locate_jump_to = 'first'                              *g:locate_jump_to*
+4.6 g:locate_jump_to = 'stay'                               *g:locate_jump_to*
 
 This option controls the position of the cursor after each search. The 
 following values are available:
 
+* 'stay': keep cursor in place
 * 'first': go to first match in location list (default |:lvimgrep| behavior)
 * 'next': go to next match after cursor (can wrap around)
 * 'closest': go to closest match (can be before or after cursor)
-* 'stay': keep cursor in place
 
 You can override this option for a specific search by appending one of the 
 following flags to your query (if multiple are entered, the last one will be 
 chosen):
 
+* s: act as if |g:locate_jump_to| = 'stay'
 * f: act as if |g:locate_jump_to| = 'first'
 * n: act as if |g:locate_jump_to| = 'next'
 * c: act as if |g:locate_jump_to| = 'closest'
-* s: act as if |g:locate_jump_to| = 'stay'
 
 E.g.
 >
@@ -254,6 +252,10 @@ Create locate mappings.
 
 ==============================================================================
 5. Changes                                                     *LocateChanges*
+
+v1.3.3 (09/04/2014)
+  * Changed defaults for |g:locate_focus|, |g:locate_highlight| and 
+    |g:locate_jump_to|.
 
 v1.3.2 (08/31/2014)
   * Better highlighting configuration. Also allow disabling of highlighting.

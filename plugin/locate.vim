@@ -5,7 +5,7 @@ if (exists('g:locate_disable') && g:locate_disable) || &compatible
 endif
 
 if !exists('g:locate_highlight')
-  let g:locate_highlight = 'Search'
+  let g:locate_highlight = 'IncSearch'
 endif
 if !exists('g:locate_initial_mark')
   let g:locate_initial_mark = ''
@@ -14,13 +14,13 @@ if !exists('g:locate_max_height')
   let g:locate_max_height = 20
 endif
 if !exists('g:locate_focus')
-  let g:locate_focus = 0
+  let g:locate_focus = 1
 endif
 if !exists('g:locate_global')
   let g:locate_global = 1
 endif
 if !exists('g:locate_jump_to')
-  let g:locate_jump_to = 'first'
+  let g:locate_jump_to = 'stay'
 endif
 if !exists('g:locate_very_magic')
   let g:locate_very_magic = 0

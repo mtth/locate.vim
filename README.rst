@@ -1,22 +1,33 @@
+.. default-role:: code
+
+
 Locate.vim
 ==========
 
-The ``:lvimgrep`` you've always dreamed of.
+Vim's missing search.
 
 .. image:: doc/locate.png
    :align: center
+
+`/` and `?` are *motions*: simple and flexible. But when searching for a common 
+pattern, especially in a large file, it can be hard to get to the one match we 
+are looking for (tired of hitting `n`?). They also don't provide an overview of 
+where matches are: the only way to figure it out is to move our cursor.
+
+Vim comes with a family of commands for this use-case (see `:help vimgrep`), 
+but they require a lot of manual work (opening the list of results, no 
+highlighting, etc.). `:Locate`, or `:L` for short, handles all this and more!
 
 
 Features
 --------
 
-* Customizable window specific highlighting
-* Automatic sorting and updating of search results
-* Responsive location list sizing
-* Optional ``smartcase`` and ``very magic`` modes
-* Simple multiple searches by chaining patterns
+* Window specific highlighting!
+* Automatic sizing, sorting and updating of results
+* `gl` mapping to search for current selection / word under cursor
+* Customizable `smartcase` and `very magic` modes
 
-``:help Locate`` for details and more.
+`:help Locate` for the full list of options.
 
 
 Installation
@@ -29,7 +40,7 @@ With `pathogen.vim`_:
   $ cd ~/.vim/bundle
   $ git clone https://github.com/mtth/locate.vim
 
-Otherwise simply copy the folders into your ``.vim`` directory.
+Otherwise simply copy the folders into your `.vim` directory.
 
 
 .. _`pathogen.vim`: https://github.com/tpope/vim-pathogen
