@@ -286,6 +286,7 @@ function! s:open_location_list(height, patterns, position)
   endif
   execute 'lopen ' . a:height
   let list_bufnr = bufnr('%')
+  let list_winnr = winnr()
   let s:locate_ids[list_bufnr] = locate_id
   if s:highlight_exists()
     for pattern in a:patterns
@@ -300,7 +301,7 @@ function! s:open_location_list(height, patterns, position)
   autocmd! BufWinLeave <buffer> call <SID>remove_highlight(remove(s:locate_ids, expand('<abuf>')))
   call s:jump(cursor, a:position)
   if g:locate_focus
-    execute list_bufnr . 'wincmd w'
+    execute list_winnr . 'wincmd w'
   else
     execute preserve_cmd
   endif
