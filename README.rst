@@ -14,9 +14,6 @@ Vim comes with a family of commands for this use-case (see `:help vimgrep`),
 but they require a lot of manual work (opening the list of results, no 
 highlighting, etc.). `:Locate`, or `:L` for short, handles all this and more!
 
-.. image:: doc/locate.png
-   :align: center
-
 
 Features
 --------
@@ -25,6 +22,9 @@ Features
 * Automatic sizing, sorting and refreshing of results.
 * Quick search for current selection / word under cursor.
 * Customizable smartcase_ and `very magic`_ modes.
+
+.. image:: doc/locate.png
+   :align: center
 
 
 Installation
