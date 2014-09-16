@@ -15,7 +15,7 @@ cursor.
 
 Vim comes with a family of commands for this use-case (see `:help vimgrep`), 
 but they require a lot of manual work (opening the list of results, no 
-highlighting, etc.). `:Locate`, or `:L` for short, handles all this and more!
+highlighting, etc.). `:Locate`, or `:L` for short, handles all this and more.
 
 
 Features
@@ -25,19 +25,6 @@ Features
 * Automatic sizing, sorting and refreshing of results.
 * Quick search for current selection / word under cursor.
 * Customizable smartcase_ and `very magic`_ modes.
-
-
-Installation
-------------
-
-With `pathogen.vim`_:
-
-.. code:: bash
-
-  $ cd ~/.vim/bundle
-  $ git clone https://github.com/mtth/locate.vim
-
-Otherwise simply copy the folders into your `.vim` directory.
 
 
 Quickstart
@@ -56,6 +43,18 @@ its position inside the searched window (this can be configured with the
 results will stay updated on save. There are more commands and configuration 
 options which you can read about by running `:help Locate`.
 
+
+Installation
+------------
+
+With `pathogen.vim`_:
+
+.. code:: bash
+
+  $ cd ~/.vim/bundle
+  $ git clone https://github.com/mtth/locate.vim
+
+Otherwise simply copy the folders into your `.vim` directory.
 
 
 .. _smartcase: http://vimdoc.sourceforge.net/htmldoc/options.html#'smartcase'
