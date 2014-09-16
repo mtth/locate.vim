@@ -22,11 +22,9 @@ Features
 --------
 
 * Window specific highlighting!
-* Automatic sizing, sorting and updating of results
-* `gl` mapping to search for current selection / word under cursor
-* Customizable `smartcase` and `very magic` modes
-
-`:help Locate` for the full list of options.
+* Automatic sizing, sorting and refreshing of results.
+* Quick search for current selection / word under cursor.
+* Customizable smartcase_ and `very magic`_ modes.
 
 
 Installation
@@ -42,4 +40,28 @@ With `pathogen.vim`_:
 Otherwise simply copy the folders into your `.vim` directory.
 
 
+Quickstart
+----------
+
+The two main functions are the following:
+
++ `:L foobar` searches for "foobar" inside the current window (short for 
+  `:Locate foobar`).
++ `gl` searches for the word under the cursor (normal mode) or the current 
+  selection (visual mode).
++ `:Lpurge` to close the results list and cancel highlighting (can also be done 
+  via `:lclose`).
+
+After each new search the cursor will jump to the location list and remember 
+its position inside the searched window (this can be configured with the 
+`g:locate_focus` and `g:locate_jump_to` options respectively). The list of 
+results will stay updated on save.
+
+There are more commands and configuration options which you can read about by 
+running `:help Locate`.
+
+
+
+.. _smartcase: http://vimdoc.sourceforge.net/htmldoc/options.html#'smartcase'
+.. _`very magic`: http://vimdoc.sourceforge.net/htmldoc/pattern.html#/magic
 .. _`pathogen.vim`: https://github.com/tpope/vim-pathogen
