@@ -43,8 +43,6 @@ Otherwise simply copy the folders into your `.vim` directory.
 Quickstart
 ----------
 
-The two main functions are the following:
-
 + `:L foobar` searches for "foobar" inside the current window (short for 
   `:Locate foobar`).
 + `gl` searches for the word under the cursor (normal mode) or the current 
@@ -55,10 +53,8 @@ The two main functions are the following:
 After each new search the cursor will jump to the location list and remember 
 its position inside the searched window (this can be configured with the 
 `g:locate_focus` and `g:locate_jump_to` options respectively). The list of 
-results will stay updated on save.
-
-There are more commands and configuration options which you can read about by 
-running `:help Locate`.
+results will stay updated on save. There are more commands and configuration 
+options which you can read about by running `:help Locate`.
 
 
 
