@@ -6,8 +6,8 @@ Locate.vim
 
 `/` and `?` are search *motions*: simple and powerful. But when searching for a 
 common pattern, especially in a large file, it can be hard to get to the one 
-match we are looking for (tired of hitting `n`?). They also don't provide an 
-overview of where matches are: the only way to figure it out is to move our 
+match you're looking for (tired of hitting `n`?). They also don't provide an 
+overview of where the matches are: the only way to figure it out is to move the 
 cursor.
 
 Vim comes with a family of commands for this use-case (see `:help vimgrep`), 
@@ -47,7 +47,7 @@ Quickstart
   `:Locate foobar`).
 + `gl` searches for the word under the cursor (normal mode) or the current 
   selection (visual mode).
-+ `:Lpurge` to close the results list and cancel highlighting (can also be done 
++ `:Lpurge` closes the results list and cancels highlighting (can also be done 
   via `:lclose`).
 
 After each new search the cursor will jump to the location list and remember 
