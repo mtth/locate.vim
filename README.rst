@@ -13,9 +13,10 @@ match you're looking for (tired of hitting `n`?). They also don't provide an
 overview of where the matches are: the only way to figure it out is to move the 
 cursor.
 
-Vim comes with a family of commands for this use-case (see `:help vimgrep`), 
-but they require a lot of manual work (opening the list of results, no 
-highlighting, etc.). `:Locate`, or `:L` for short, handles all this and more.
+Vim comes with alternate commands for this use-case (see `:help vimgrep` or 
+`:help ilist`), but they all require manual work (refreshing the list of 
+results, no highlighting, etc.). `:Locate`, or `:L` for short, handles all this 
+and more.
 
 
 Features

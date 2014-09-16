@@ -362,7 +362,7 @@ function! s:parse(input)
   for pattern in raw_patterns
     let prefix = ''
     if !strlen(s:get_case_mode(pattern)) && &ignorecase
-      if g:locate_smart_case && match(pattern, '\C[A-Z]') >=# 0
+      if g:locate_smartcase && match(pattern, '\C[A-Z]') >=# 0
         let prefix .= '\C'
       else
         let prefix .= '\c'
