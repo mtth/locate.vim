@@ -44,7 +44,7 @@ Quickstart
 ----------
 
 + `:L foobar` searches for "foobar" inside the current window (short for 
-  `:Locate foobar`).
+  `:Locate foobar`). Matches in the current window will be highlighted.
 + `gl` searches for the word under the cursor (normal mode) or the current 
   selection (visual mode).
 + `:Lpurge` closes the results list and cancels highlighting (can also be done 
