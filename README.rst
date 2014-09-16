@@ -4,6 +4,9 @@
 Locate.vim
 ==========
 
+.. image:: doc/locate.png
+   :align: center
+
 `/` and `?` are search *motions*: simple and powerful. But when searching for a 
 common pattern, especially in a large file, it can be hard to get to the one 
 match you're looking for (tired of hitting `n`?). They also don't provide an 
@@ -22,9 +25,6 @@ Features
 * Automatic sizing, sorting and refreshing of results.
 * Quick search for current selection / word under cursor.
 * Customizable smartcase_ and `very magic`_ modes.
-
-.. image:: doc/locate.png
-   :align: center
 
 
 Installation
