@@ -118,6 +118,9 @@ function! s:locate_multiple(patterns, global, add)
   if len(loclist) && g:locate_sort
     call setloclist(0, sort(loclist, 's:location_list_sorter'))
   endif
+  if v:version >= 900
+    call setloclist(0, [], 'a', {'title': 'Locate'})
+  endif
   return locate_id
 endfunction
 
